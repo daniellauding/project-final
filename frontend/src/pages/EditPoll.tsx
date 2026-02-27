@@ -8,6 +8,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
 import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound } from "lucide-react";
+import { toEmbedUrl } from "../utils/embedUrl";
 
 const EditPoll = () => {
   const { shareId } = useParams<{ shareId: string }>();
@@ -236,7 +237,7 @@ const EditPoll = () => {
                 />
                 {opt.embedUrl && (
                   <iframe
-                    src={opt.embedUrl}
+                    src={toEmbedUrl(opt.embedUrl)}
                     title={`Preview ${opt.label}`}
                     className="w-full h-48 rounded border"
                     allowFullScreen

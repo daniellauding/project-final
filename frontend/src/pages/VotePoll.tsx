@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "../components/AuthModal";
+import { toEmbedUrl } from "../utils/embedUrl";
 
 interface PollOption {
   label: string;
@@ -226,7 +227,7 @@ const VotePoll = () => {
       >
         {opt.embedUrl ? (
           <iframe
-            src={opt.embedUrl}
+            src={toEmbedUrl(opt.embedUrl)}
             title={opt.label}
             className="w-full h-full border-0"
             allowFullScreen

@@ -8,6 +8,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
 import { PlusCircle, Trash2, Upload } from "lucide-react";
+import { toEmbedUrl } from "../utils/embedUrl";
 
 const CreatePoll = () => {
   const { user } = useAuth();
@@ -230,7 +231,7 @@ const CreatePoll = () => {
 
                 {opt.embedUrl && (
                   <iframe
-                    src={opt.embedUrl}
+                    src={toEmbedUrl(opt.embedUrl)}
                     title={`Preview ${opt.label}`}
                     className="w-full h-48 rounded border"
                     allowFullScreen
