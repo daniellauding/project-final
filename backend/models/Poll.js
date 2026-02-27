@@ -62,8 +62,12 @@ const pollSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["draft", "published"],
+    enum: ["draft", "published", "closed"],
     default: "published"
+  },
+  showWinner: {
+    type: Boolean,
+    default: true
   },
   visibility: {
     type: String,

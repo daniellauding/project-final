@@ -41,6 +41,9 @@ interface Poll {
   totalVotes: number;
   results: PollOption[];
   allowRemix: boolean;
+  showWinner: boolean;
+  status: string;
+  deadline: string | null;
   remixes: RemixInfo[];
   remixedFrom: string | null;
 }
@@ -212,7 +215,8 @@ const VotePoll = () => {
   const hasVoted = votedIndex !== null;
   const isVotedOption = votedIndex === current;
   const maxVotes = Math.max(...poll.results.map(r => r.voteCount));
-  const isLeader = opt.voteCount === maxVotes && maxVotes > 0;
+  const isLeader = poll.showWinner !== false && opt.voteCount === maxVotes && maxVotes > 0;
+  const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
   const sortedResults = [...poll.results]
     .map((r, i) => ({ ...r, originalIndex: i }))
     .sort((a, b) => b.voteCount - a.voteCount);
@@ -247,7 +251,15 @@ const VotePoll = () => {
         md:bottom-auto md:left-auto md:translate-x-0 md:right-0 md:top-1/2 md:-translate-y-1/2 md:flex-col
       ">
         {/* Vote */}
-        {user ? (
+        {isClosed ? (
+          <button
+            disabled
+            className="p-2 rounded-full bg-gray-400 text-white shadow-lg cursor-not-allowed"
+            title="Röstningen är stängd"
+          >
+            <ThumbsUp className="h-5 w-5" />
+          </button>
+        ) : user ? (
           <button
             onClick={() => handleVote(current)}
             disabled={voting || isVotedOption}
@@ -330,7 +342,10 @@ const VotePoll = () => {
       <div className="absolute top-2 left-2 z-10 max-w-[60%]">
         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white">
           <p className="text-sm font-medium truncate">{poll.title}</p>
-          <p className="text-xs opacity-70">{poll.creatorName} · {poll.totalVotes} röster</p>
+          <p className="text-xs opacity-70">
+            {poll.creatorName} · {poll.totalVotes} röster
+            {isClosed && <span className="ml-1 text-red-300">· Stängd</span>}
+          </p>
         </div>
       </div>
 
@@ -437,9 +452,9 @@ const VotePoll = () => {
                       className="w-full text-left flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition"
                     >
                       <span className={`text-lg font-bold w-7 text-center ${
-                        rank === 0 && r.voteCount > 0 ? "text-yellow-500" : "text-muted-foreground"
+                        rank === 0 && r.voteCount > 0 && poll.showWinner !== false ? "text-yellow-500" : "text-muted-foreground"
                       }`}>
-                        {rank === 0 && r.voteCount > 0 ? "👑" : `#${rank + 1}`}
+                        {rank === 0 && r.voteCount > 0 && poll.showWinner !== false ? "👑" : `#${rank + 1}`}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -453,7 +468,7 @@ const VotePoll = () => {
                         <div className="w-full bg-secondary rounded-full h-1.5 mt-1">
                           <div
                             className={`h-1.5 rounded-full transition-all ${
-                              rank === 0 && r.voteCount > 0 ? "bg-yellow-500" : "bg-primary"
+                              rank === 0 && r.voteCount > 0 && poll.showWinner !== false ? "bg-yellow-500" : "bg-primary"
                             }`}
                             style={{ width: `${r.percentage}%` }}
                           />

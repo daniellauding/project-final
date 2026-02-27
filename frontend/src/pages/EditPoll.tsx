@@ -19,6 +19,9 @@ const EditPoll = () => {
   const [visibility, setVisibility] = useState("public");
   const [password, setPassword] = useState("");
   const [allowRemix, setAllowRemix] = useState(true);
+  const [showWinner, setShowWinner] = useState(true);
+  const [deadline, setDeadline] = useState("");
+  const [pollStatus, setPollStatus] = useState("published");
   const [options, setOptions] = useState<{ label: string; imageUrl: string; embedUrl: string }[]>([]);
   const [pollId, setPollId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -32,6 +35,9 @@ const EditPoll = () => {
       setVisibility(data.visibility || "public");
       setPassword(data.password || "");
       setAllowRemix(data.allowRemix !== false);
+      setShowWinner(data.showWinner !== false);
+      setDeadline(data.deadline ? new Date(data.deadline).toISOString().slice(0, 16) : "");
+      setPollStatus(data.status || "published");
       setPollId(data._id);
       setOptions(
         data.options.map((opt: any) => ({
@@ -82,6 +88,11 @@ const EditPoll = () => {
         title,
         description,
         visibility,
+        status: pollStatus,
+        allowRemix,
+        showWinner,
+        deadline: deadline || undefined,
+        password,
         options: options.map((opt) => ({
           label: opt.label,
           imageUrl: opt.imageUrl,
@@ -161,15 +172,66 @@ const EditPoll = () => {
         )}
 
         {/* Allow remix toggle */}
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={allowRemix}
-            onChange={(e) => setAllowRemix(e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-sm">Tillåt remix</span>
-        </label>
+        {/* Poll settings */}
+        <div className="space-y-3 rounded-lg border p-4">
+          <Label>Inställningar</Label>
+
+          {/* Close/open poll */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Status</span>
+            <div className="flex gap-1">
+              {[
+                { value: "published", label: "Öppen" },
+                { value: "closed", label: "Stängd" },
+              ].map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setPollStatus(s.value)}
+                  className={`px-3 py-1 rounded text-xs transition ${
+                    pollStatus === s.value ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-accent"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {pollStatus === "closed" && (
+            <p className="text-xs text-muted-foreground">Inga nya röster kan läggas</p>
+          )}
+
+          {/* Deadline */}
+          <div className="space-y-1">
+            <label className="text-sm flex items-center justify-between">
+              Deadline (valfri)
+              {deadline && (
+                <button type="button" onClick={() => setDeadline("")} className="text-xs text-muted-foreground underline">
+                  Ta bort
+                </button>
+              )}
+            </label>
+            <Input
+              type="datetime-local"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+            />
+            {deadline && new Date(deadline) < new Date() && (
+              <p className="text-xs text-destructive">Deadline har passerat — inga nya röster</p>
+            )}
+          </div>
+
+          {/* Toggles */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={showWinner} onChange={(e) => setShowWinner(e.target.checked)} className="rounded" />
+            <span className="text-sm">Visa vinnare</span>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={allowRemix} onChange={(e) => setAllowRemix(e.target.checked)} className="rounded" />
+            <span className="text-sm">Tillåt remix</span>
+          </label>
+        </div>
 
         {/* Options */}
         <div className="space-y-4">

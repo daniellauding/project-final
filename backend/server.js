@@ -330,6 +330,14 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid option index" });
     }
 
+    // Block votes if poll is closed or deadline passed
+    if (poll.status === "closed") {
+      return res.status(400).json({ success: false, error: "This poll is closed" });
+    }
+    if (poll.deadline && new Date() > new Date(poll.deadline)) {
+      return res.status(400).json({ success: false, error: "Voting deadline has passed" });
+    }
+
     // Remove any existing vote (allows changing vote)
     poll.options.forEach(opt => {
       const idx = opt.votes.findIndex(v => v.toString() === req.user._id.toString());
@@ -387,7 +395,7 @@ app.patch("/polls/:id", authenticateUser, async (req, res) => {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const { title, description, status, visibility, options, allowRemix, password } = req.body;
+    const { title, description, status, visibility, options, allowRemix, password, showWinner, deadline } = req.body;
     if (title) poll.title = title;
     if (description !== undefined) poll.description = description;
     if (status) poll.status = status;
@@ -395,6 +403,8 @@ app.patch("/polls/:id", authenticateUser, async (req, res) => {
     if (options) poll.options = options;
     if (allowRemix !== undefined) poll.allowRemix = allowRemix;
     if (password !== undefined) poll.password = password;
+    if (showWinner !== undefined) poll.showWinner = showWinner;
+    if (deadline !== undefined) poll.deadline = deadline || null;
 
     const updated = await poll.save();
     res.json(updated);
