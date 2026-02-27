@@ -1,60 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { pollApi } from "../api/polls";
+import { usePollStore } from "../stores/pollStore";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
-import { PlusCircle, Inbox, Share2, Trash2, BarChart3, Pencil, Eye, EyeOff, Lock } from "lucide-react";
+import { PlusCircle, Inbox, Share2, Trash2, Pencil, Eye, EyeOff, Lock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
-interface PollOption {
-  label: string;
-  imageUrl?: string;
-  embedUrl?: string;
-  votes?: string[];
-}
-
-interface Poll {
-  _id: string;
-  title: string;
-  description: string;
-  options: PollOption[];
-  status: "draft" | "published";
-  visibility?: "public" | "unlisted" | "private";
-  shareId: string;
-  creator: string;
-  totalVotes?: number;
-  createdAt: string;
-}
-
 const Dashboard = () => {
   const { user } = useAuth();
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { polls: allPolls, loading, fetchPolls, deletePoll } = usePollStore();
+
+  const polls = allPolls.filter((p) => p.creator === user?.userId);
 
   useEffect(() => {
-    const fetchPolls = async () => {
-      try {
-        const data = await pollApi.getAll(1, true);
-        if (data.results) {
-          const myPolls = data.results.filter((p: Poll) => p.creator === user?.userId);
-          setPolls(myPolls);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchPolls();
-    else setLoading(false);
-  }, [user]);
+    if (user) fetchPolls(1, true);
+  }, [user, fetchPolls]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Vill du ta bort denna poll?")) return;
-    await pollApi.delete(id);
-    setPolls(polls.filter((p) => p._id !== id));
+    await deletePoll(id);
     toast("Poll borttagen");
   };
 
@@ -63,7 +29,7 @@ const Dashboard = () => {
     toast("Länk kopierad!");
   };
 
-  const getThumbnail = (poll: Poll): string | null => {
+  const getThumbnail = (poll: (typeof polls)[0]): string | null => {
     for (const opt of poll.options) {
       if (opt.imageUrl) return opt.imageUrl;
     }
@@ -136,7 +102,6 @@ const Dashboard = () => {
                 to={`/poll/${poll.shareId}`}
                 className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow"
               >
-                {/* Thumbnail */}
                 <div className="aspect-video bg-muted relative overflow-hidden">
                   {thumb ? (
                     <img src={thumb} alt={poll.title} className="w-full h-full object-cover" />
@@ -151,7 +116,6 @@ const Dashboard = () => {
                       </span>
                     </div>
                   )}
-                  {/* Status badges */}
                   <div className="absolute top-2 right-2 flex gap-1">
                     <Badge variant={poll.status === "published" ? "default" : "secondary"} className="text-xs">
                       {poll.status === "published" ? "Publicerad" : "Utkast"}
@@ -159,7 +123,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Info */}
                 <div className="p-3">
                   <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
                     {poll.title}
@@ -179,7 +142,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Actions — stop link propagation */}
                 <div className="px-3 pb-3 flex gap-2" onClick={(e) => e.preventDefault()}>
                   <Button size="sm" variant="outline" asChild>
                     <Link to={`/poll/${poll.shareId}/edit`}>

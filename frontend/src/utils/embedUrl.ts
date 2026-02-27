@@ -1,18 +1,61 @@
 /**
- * Converts a regular URL to an embeddable URL.
- * Handles Figma, YouTube, CodePen, Loom, Google Slides etc.
+ * Known domains that allow iframe embedding.
+ * Other domains (like google.com) block iframes via X-Frame-Options / CSP.
  */
-export function toEmbedUrl(url: string): string {
-  if (!url) return "";
+const EMBEDDABLE_DOMAINS = [
+  "figma.com",
+  "www.figma.com",
+  "youtube.com",
+  "www.youtube.com",
+  "youtu.be",
+  "loom.com",
+  "www.loom.com",
+  "codepen.io",
+  "codesandbox.io",
+  "docs.google.com",
+  "slides.google.com",
+  "open.spotify.com",
+  "soundcloud.com",
+  "vimeo.com",
+  "player.vimeo.com",
+  "stackblitz.com",
+  "replit.com",
+  "lovable.dev",
+  "vercel.app",
+  "netlify.app",
+  "github.io",
+  "gitlab.io",
+  "surge.sh",
+  "render.com",
+];
+
+/**
+ * Check if a URL's domain is known to allow embedding.
+ */
+export function isEmbeddable(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return EMBEDDABLE_DOMAINS.some(
+      (d) => u.hostname === d || u.hostname.endsWith("." + d)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Converts a regular URL to an embeddable URL.
+ * Returns null if the domain is not known to support embedding.
+ */
+export function toEmbedUrl(url: string): string | null {
+  if (!url) return null;
 
   try {
     const u = new URL(url);
 
-    // Figma — must use embed wrapper
+    // Figma
     if (u.hostname === "www.figma.com" || u.hostname === "figma.com") {
-      // Already an embed URL
       if (u.pathname.startsWith("/embed")) return url;
-      // Convert any figma link to embed format
       return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(url)}`;
     }
 
@@ -24,15 +67,29 @@ export function toEmbedUrl(url: string): string {
     if (u.hostname === "youtu.be") {
       return `https://www.youtube.com/embed${u.pathname}`;
     }
+    if (u.hostname === "www.youtube.com" && u.pathname.startsWith("/embed/")) {
+      return url;
+    }
+
+    // Vimeo
+    if (u.hostname === "vimeo.com") {
+      const id = u.pathname.split("/").pop();
+      if (id) return `https://player.vimeo.com/video/${id}`;
+    }
 
     // Loom
     if (u.hostname === "www.loom.com" && u.pathname.startsWith("/share/")) {
       return url.replace("/share/", "/embed/");
     }
 
-    // CodePen — /pen/ to /embed/
+    // CodePen
     if (u.hostname === "codepen.io" && u.pathname.includes("/pen/")) {
       return url.replace("/pen/", "/embed/");
+    }
+
+    // CodeSandbox
+    if (u.hostname === "codesandbox.io" && u.pathname.startsWith("/s/")) {
+      return url.replace("/s/", "/embed/");
     }
 
     // Google Slides
@@ -42,9 +99,17 @@ export function toEmbedUrl(url: string): string {
       }
     }
 
-    // Everything else — return as-is (works for Lovable, Vercel deploys, etc.)
-    return url;
+    // Spotify
+    if (u.hostname === "open.spotify.com") {
+      return url.replace("open.spotify.com", "open.spotify.com/embed");
+    }
+
+    // Known embeddable domains — return as-is
+    if (isEmbeddable(url)) return url;
+
+    // Unknown domain — not safe to iframe
+    return null;
   } catch {
-    return url;
+    return null;
   }
 }

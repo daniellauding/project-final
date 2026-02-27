@@ -1,40 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { pollApi } from "../api/polls";
+import { usePollStore } from "../stores/pollStore";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
 import { Vote, PlusCircle } from "lucide-react";
 
-interface Poll {
-  _id: string;
-  title: string;
-  description: string;
-  options: { label: string; imageUrl?: string; embedUrl?: string; votes?: string[] }[];
-  shareId: string;
-  creatorName: string;
-  totalVotes?: number;
-}
-
 const Home = () => {
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { polls, loading, fetchPolls } = usePollStore();
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const data = await pollApi.getAll();
-        if (data.results) setPolls(data.results);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, []);
+    fetchPolls();
+  }, [fetchPolls]);
 
-  const getThumbnail = (poll: Poll): string | null => {
+  const getThumbnail = (poll: (typeof polls)[0]): string | null => {
     for (const opt of poll.options) {
       if (opt.imageUrl) return opt.imageUrl;
     }

@@ -8,7 +8,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
 import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound } from "lucide-react";
-import { toEmbedUrl } from "../utils/embedUrl";
+import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 
 const EditPoll = () => {
   const { shareId } = useParams<{ shareId: string }>();
@@ -322,14 +322,21 @@ const EditPoll = () => {
                   onChange={(e) => updateOption(i, "embedUrl", e.target.value)}
                   placeholder="Embed-URL (valfri)"
                 />
-                {opt.embedUrl && (
+                {opt.embedUrl && toEmbedUrl(opt.embedUrl) ? (
                   <iframe
-                    src={toEmbedUrl(opt.embedUrl)}
+                    src={toEmbedUrl(opt.embedUrl)!}
                     title={`Preview ${opt.label}`}
                     className="w-full h-48 rounded border"
                     allowFullScreen
                   />
-                )}
+                ) : opt.embedUrl ? (
+                  <div className="flex items-center gap-2 p-3 rounded border bg-muted text-sm">
+                    <span className="truncate flex-1">{opt.embedUrl}</span>
+                    <a href={opt.embedUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline shrink-0">
+                      Öppna
+                    </a>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           ))}

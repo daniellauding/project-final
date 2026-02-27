@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "../components/AuthModal";
-import { toEmbedUrl } from "../utils/embedUrl";
+import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 
 interface PollOption {
   label: string;
@@ -239,13 +239,28 @@ const VotePoll = () => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {opt.embedUrl ? (
+        {opt.embedUrl && toEmbedUrl(opt.embedUrl) ? (
           <iframe
-            src={toEmbedUrl(opt.embedUrl)}
+            src={toEmbedUrl(opt.embedUrl)!}
             title={opt.label}
             className="w-full h-full border-0"
             allowFullScreen
           />
+        ) : opt.embedUrl && !toEmbedUrl(opt.embedUrl) ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-4 p-8">
+            <span className="text-3xl font-bold text-muted-foreground/30">{opt.label}</span>
+            <a
+              href={opt.embedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition"
+            >
+              Öppna länk i ny flik
+            </a>
+            <p className="text-xs text-muted-foreground text-center max-w-sm">
+              Denna webbplats tillåter inte inbäddning. Klicka ovan för att öppna.
+            </p>
+          </div>
         ) : opt.videoUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-black">
             <video src={opt.videoUrl} controls className="max-w-full max-h-full" />
