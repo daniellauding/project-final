@@ -55,9 +55,9 @@ const pollSchema = new mongoose.Schema({
     type: [optionSchema],
     validate: {
       validator: function(arr) {
-        return arr.length >= 2 && arr.length <= 4;
+        return arr.length >= 2;
       },
-      message: "A poll must have between 2 and 4 options"
+      message: "A poll must have at least 2 options"
     }
   },
   status: {
@@ -78,6 +78,10 @@ const pollSchema = new mongoose.Schema({
   allowRemix: {
     type: Boolean,
     default: true
+  },
+  password: {
+    type: String,
+    default: ""
   },
   remixedFrom: {
     type: mongoose.Schema.Types.ObjectId,

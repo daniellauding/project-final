@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Vote, LayoutDashboard, PlusCircle, LogIn, LogOut } from "lucide-react";
+import { Vote, LayoutDashboard, PlusCircle, LogIn, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import AuthModal from "./AuthModal";
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
 
   return (
@@ -36,9 +36,11 @@ const Header = () => {
           )}
 
           {user ? (
-            <Button variant="outline" size="sm" onClick={logout}>
-              <LogOut className="mr-1 h-4 w-4" />
-              {user.username}
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/profile">
+                <User className="mr-1 h-4 w-4" />
+                {user.username}
+              </Link>
             </Button>
           ) : (
             <Button size="sm" onClick={() => setShowAuth(true)}>

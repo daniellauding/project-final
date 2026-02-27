@@ -2,18 +2,26 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { pollApi } from "../api/polls";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
-import { PlusCircle, Inbox, Share2, Trash2, BarChart3 } from "lucide-react";
+import { PlusCircle, Inbox, Share2, Trash2, BarChart3, Pencil, Eye, EyeOff, Lock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
+
+interface PollOption {
+  label: string;
+  imageUrl?: string;
+  embedUrl?: string;
+  votes?: string[];
+}
 
 interface Poll {
   _id: string;
   title: string;
   description: string;
-  options: { label: string; votes?: string[] }[];
+  options: PollOption[];
   status: "draft" | "published";
+  visibility?: "public" | "unlisted" | "private";
   shareId: string;
   creator: string;
   totalVotes?: number;
@@ -28,7 +36,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchPolls = async () => {
       try {
-        const data = await pollApi.getAll();
+        const data = await pollApi.getAll(1, true);
         if (data.results) {
           const myPolls = data.results.filter((p: Poll) => p.creator === user?.userId);
           setPolls(myPolls);
@@ -47,10 +55,31 @@ const Dashboard = () => {
     if (!confirm("Vill du ta bort denna poll?")) return;
     await pollApi.delete(id);
     setPolls(polls.filter((p) => p._id !== id));
+    toast("Poll borttagen");
   };
 
   const copyLink = (shareId: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/poll/${shareId}`);
+    toast("Länk kopierad!");
+  };
+
+  const getThumbnail = (poll: Poll): string | null => {
+    for (const opt of poll.options) {
+      if (opt.imageUrl) return opt.imageUrl;
+    }
+    return null;
+  };
+
+  const visibilityIcon = (v?: string) => {
+    if (v === "private") return <Lock className="h-3 w-3" />;
+    if (v === "unlisted") return <EyeOff className="h-3 w-3" />;
+    return <Eye className="h-3 w-3" />;
+  };
+
+  const visibilityLabel = (v?: string) => {
+    if (v === "private") return "Privat";
+    if (v === "unlisted") return "Olistad";
+    return "Publik";
   };
 
   if (!user) {
@@ -66,7 +95,7 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto p-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-64" />)}
         </div>
       </div>
     );
@@ -75,7 +104,10 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto p-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Dina polls</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Dina polls</h1>
+          <p className="text-sm text-muted-foreground">{polls.length} bidrag</p>
+        </div>
         <Button asChild>
           <Link to="/create">
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -95,41 +127,77 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {polls.map((poll) => (
-            <Card key={poll._id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{poll.title}</CardTitle>
-                  <Badge variant={poll.status === "published" ? "default" : "secondary"}>
-                    {poll.status}
-                  </Badge>
+          {polls.map((poll) => {
+            const thumb = getThumbnail(poll);
+            const hasEmbed = poll.options.some(o => o.embedUrl);
+            return (
+              <Link
+                key={poll._id}
+                to={`/poll/${poll.shareId}`}
+                className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                {/* Thumbnail */}
+                <div className="aspect-video bg-muted relative overflow-hidden">
+                  {thumb ? (
+                    <img src={thumb} alt={poll.title} className="w-full h-full object-cover" />
+                  ) : hasEmbed ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
+                      <span className="text-2xl font-bold text-muted-foreground/50">Embed</span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-2xl font-bold text-muted-foreground/30">
+                        {poll.options.length} alt.
+                      </span>
+                    </div>
+                  )}
+                  {/* Status badges */}
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <Badge variant={poll.status === "published" ? "default" : "secondary"} className="text-xs">
+                      {poll.status === "published" ? "Publicerad" : "Utkast"}
+                    </Badge>
+                  </div>
                 </div>
-                {poll.description && <CardDescription>{poll.description}</CardDescription>}
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 text-sm text-muted-foreground">
-                  <span>{poll.options.length} alternativ</span>
-                  <span>|</span>
-                  <span>{poll.totalVotes || 0} röster</span>
+
+                {/* Info */}
+                <div className="p-3">
+                  <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
+                    {poll.title}
+                  </h3>
+                  {poll.description && (
+                    <p className="text-sm text-muted-foreground truncate">{poll.description}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                    <span>{poll.options.length} alternativ</span>
+                    <span>·</span>
+                    <span>{poll.totalVotes || 0} röster</span>
+                    <span>·</span>
+                    <span className="flex items-center gap-1">
+                      {visibilityIcon(poll.visibility)}
+                      {visibilityLabel(poll.visibility)}
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button size="sm" asChild>
-                  <Link to={`/poll/${poll.shareId}`}>
-                    <BarChart3 className="mr-1 h-4 w-4" />
-                    Visa
-                  </Link>
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => copyLink(poll.shareId)}>
-                  <Share2 className="mr-1 h-4 w-4" />
-                  Dela
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(poll._id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+
+                {/* Actions — stop link propagation */}
+                <div className="px-3 pb-3 flex gap-2" onClick={(e) => e.preventDefault()}>
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to={`/poll/${poll.shareId}/edit`}>
+                      <Pencil className="mr-1 h-3 w-3" />
+                      Redigera
+                    </Link>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); copyLink(poll.shareId); }}>
+                    <Share2 className="mr-1 h-3 w-3" />
+                    Dela
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDelete(poll._id); }}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

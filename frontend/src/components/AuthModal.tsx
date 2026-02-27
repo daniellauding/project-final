@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -11,7 +12,8 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
-  const { login, register } = useAuth();
+  const { login, register, redirectPath, setRedirectPath } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -35,6 +37,11 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       setUsername("");
       setEmail("");
       setPassword("");
+      // Deep link redirect
+      if (redirectPath) {
+        navigate(redirectPath);
+        setRedirectPath(null);
+      }
     } else {
       setError(result.error || "Something went wrong");
     }

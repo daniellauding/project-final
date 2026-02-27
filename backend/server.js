@@ -8,6 +8,8 @@ import User from "./models/User.js";
 import Poll from "./models/Poll.js";
 import Comment from "./models/Comment.js";
 import Report from "./models/Report.js";
+import Team from "./models/Team.js";
+import Project from "./models/Project.js";
 import upload from "./middleware/upload.js";
 
 const port = process.env.PORT || 8080;
@@ -91,6 +93,7 @@ app.post("/users", async (req, res) => {
       success: true,
       userId: savedUser._id,
       username: savedUser.username,
+      avatarUrl: savedUser.avatarUrl,
       accessToken: savedUser.accessToken
     });
   } catch (error) {
@@ -130,6 +133,7 @@ app.post("/sessions", async (req, res) => {
       success: true,
       userId: user._id,
       username: user.username,
+      avatarUrl: user.avatarUrl,
       accessToken: user.accessToken
     });
   } catch (error) {
@@ -147,8 +151,27 @@ app.get("/users/me", authenticateUser, async (req, res) => {
     userId: req.user._id,
     username: req.user.username,
     email: req.user.email,
+    avatarUrl: req.user.avatarUrl,
     createdAt: req.user.createdAt
   });
+});
+
+// Update avatar
+app.patch("/users/me", authenticateUser, async (req, res) => {
+  try {
+    const { avatarUrl, username } = req.body;
+    if (avatarUrl !== undefined) req.user.avatarUrl = avatarUrl;
+    if (username) req.user.username = username;
+    await req.user.save();
+    res.json({
+      success: true,
+      userId: req.user._id,
+      username: req.user.username,
+      avatarUrl: req.user.avatarUrl
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not update profile", message: error.message });
+  }
 });
 
 // Delete own account
@@ -168,18 +191,23 @@ app.delete("/users/me", authenticateUser, async (req, res) => {
 // Get all polls
 app.get("/polls", async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, includeRemixes } = req.query;
+
+    const hideRemixes = !includeRemixes;
 
     let filter = { status: "published" };
+    if (hideRemixes) filter.remixedFrom = null;
 
     const token = req.header("Authorization");
     if (token) {
       const user = await User.findOne({ accessToken: token });
       if (user) {
+        const myFilter = { creator: user._id };
+        if (hideRemixes) myFilter.remixedFrom = null;
         filter = {
           $or: [
-            { status: "published" },
-            { creator: user._id }
+            { status: "published", ...(hideRemixes ? { remixedFrom: null } : {}) },
+            myFilter
           ]
         };
       }
@@ -214,17 +242,49 @@ app.get("/polls/:shareId", async (req, res) => {
       return res.status(404).json({ success: false, error: "Poll not found" });
     }
 
+    // Password protection check
+    if (poll.password) {
+      const provided = req.header("X-Poll-Password") || req.query.password;
+      // Owner bypasses password
+      const token = req.header("Authorization");
+      let isOwner = false;
+      if (token) {
+        const reqUser = await User.findOne({ accessToken: token });
+        if (reqUser && poll.creator.toString() === reqUser._id.toString()) isOwner = true;
+      }
+      if (!isOwner && provided !== poll.password) {
+        return res.status(403).json({ success: false, error: "Password required", requiresPassword: true });
+      }
+    }
+
     const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes.length, 0);
 
     const results = poll.options.map((opt) => ({
       label: opt.label,
       imageUrl: opt.imageUrl,
       externalUrl: opt.externalUrl,
+      embedUrl: opt.embedUrl,
+      embedType: opt.embedType,
       voteCount: opt.votes.length,
+      votes: opt.votes,
       percentage: totalVotes > 0 ? Math.round((opt.votes.length / totalVotes) * 100) : 0
     }));
 
-    res.json({ ...poll.toObject(), totalVotes, results });
+    // Find remixes of this poll
+    const remixes = await Poll.find({ remixedFrom: poll._id })
+      .select("title shareId creatorName createdAt options")
+      .sort({ createdAt: -1 });
+
+    const remixData = remixes.map(r => ({
+      _id: r._id,
+      title: r.title,
+      shareId: r.shareId,
+      creatorName: r.creatorName,
+      createdAt: r.createdAt,
+      thumbnail: r.options[0]?.imageUrl || null,
+    }));
+
+    res.json({ ...poll.toObject(), totalVotes, results, remixes: remixData });
   } catch (error) {
     res.status(500).json({ success: false, error: "Could not fetch poll", message: error.message });
   }
@@ -270,13 +330,11 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid option index" });
     }
 
-    const alreadyVoted = poll.options.some(
-      opt => opt.votes.some(v => v.toString() === req.user._id.toString())
-    );
-
-    if (alreadyVoted) {
-      return res.status(400).json({ success: false, error: "You have already voted on this poll" });
-    }
+    // Remove any existing vote (allows changing vote)
+    poll.options.forEach(opt => {
+      const idx = opt.votes.findIndex(v => v.toString() === req.user._id.toString());
+      if (idx !== -1) opt.votes.splice(idx, 1);
+    });
 
     poll.options[optionIndex].votes.push(req.user._id);
     await poll.save();
@@ -284,6 +342,35 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
     res.json({ success: true, message: "Vote recorded!" });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not vote", message: error.message });
+  }
+});
+
+// Unvote (remove your vote)
+app.post("/polls/:id/unvote", authenticateUser, async (req, res) => {
+  try {
+    const poll = await Poll.findById(req.params.id);
+
+    if (!poll) {
+      return res.status(404).json({ success: false, error: "Poll not found" });
+    }
+
+    let removed = false;
+    poll.options.forEach(opt => {
+      const idx = opt.votes.findIndex(v => v.toString() === req.user._id.toString());
+      if (idx !== -1) {
+        opt.votes.splice(idx, 1);
+        removed = true;
+      }
+    });
+
+    if (!removed) {
+      return res.status(400).json({ success: false, error: "You haven't voted on this poll" });
+    }
+
+    await poll.save();
+    res.json({ success: true, message: "Vote removed" });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not unvote", message: error.message });
   }
 });
 
@@ -300,10 +387,14 @@ app.patch("/polls/:id", authenticateUser, async (req, res) => {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const { title, description, status } = req.body;
+    const { title, description, status, visibility, options, allowRemix, password } = req.body;
     if (title) poll.title = title;
     if (description !== undefined) poll.description = description;
     if (status) poll.status = status;
+    if (visibility) poll.visibility = visibility;
+    if (options) poll.options = options;
+    if (allowRemix !== undefined) poll.allowRemix = allowRemix;
+    if (password !== undefined) poll.password = password;
 
     const updated = await poll.save();
     res.json(updated);
@@ -493,6 +584,160 @@ app.patch("/admin/reports/:id", authenticateUser, async (req, res) => {
     res.json({ success: true, report });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not update report", message: error.message });
+  }
+});
+
+// === TEAMS ===
+
+// Create team
+app.post("/teams", authenticateUser, async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const team = new Team({
+      name,
+      description,
+      owner: req.user._id,
+      members: [{ user: req.user._id, role: "admin" }]
+    });
+    const saved = await team.save();
+    res.status(201).json({ success: true, team: saved });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not create team", message: error.message });
+  }
+});
+
+// Get my teams
+app.get("/teams", authenticateUser, async (req, res) => {
+  try {
+    const teams = await Team.find({ "members.user": req.user._id })
+      .populate("members.user", "username avatarUrl")
+      .sort({ createdAt: -1 });
+    res.json({ teams });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not fetch teams", message: error.message });
+  }
+});
+
+// Get team by id
+app.get("/teams/:id", authenticateUser, async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id)
+      .populate("members.user", "username avatarUrl email");
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+
+    const isMember = team.members.some(m => m.user._id.toString() === req.user._id.toString());
+    if (!isMember) return res.status(403).json({ success: false, error: "Not a member" });
+
+    const projects = await Project.find({ team: team._id }).populate("polls");
+    res.json({ team, projects });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not fetch team", message: error.message });
+  }
+});
+
+// Join team via invite code
+app.post("/teams/join", authenticateUser, async (req, res) => {
+  try {
+    const { inviteCode } = req.body;
+    const team = await Team.findOne({ inviteCode });
+    if (!team) return res.status(404).json({ success: false, error: "Invalid invite code" });
+
+    const already = team.members.some(m => m.user.toString() === req.user._id.toString());
+    if (already) return res.status(400).json({ success: false, error: "Already a member" });
+
+    team.members.push({ user: req.user._id, role: "viewer" });
+    await team.save();
+    res.json({ success: true, team });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not join team", message: error.message });
+  }
+});
+
+// Invite user to team (by username)
+app.post("/teams/:id/invite", authenticateUser, async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+
+    const isAdmin = team.members.some(
+      m => m.user.toString() === req.user._id.toString() && (m.role === "admin" || team.owner.toString() === req.user._id.toString())
+    );
+    if (!isAdmin) return res.status(403).json({ success: false, error: "Only admins can invite" });
+
+    const { username, role } = req.body;
+    const invitedUser = await User.findOne({ username });
+    if (!invitedUser) return res.status(404).json({ success: false, error: "User not found" });
+
+    const already = team.members.some(m => m.user.toString() === invitedUser._id.toString());
+    if (already) return res.status(400).json({ success: false, error: "Already a member" });
+
+    team.members.push({ user: invitedUser._id, role: role || "viewer" });
+    await team.save();
+    res.json({ success: true, message: `${username} added to team` });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not invite user", message: error.message });
+  }
+});
+
+// Remove member from team
+app.delete("/teams/:id/members/:userId", authenticateUser, async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+
+    if (team.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, error: "Only owner can remove members" });
+    }
+
+    team.members = team.members.filter(m => m.user.toString() !== req.params.userId);
+    await team.save();
+    res.json({ success: true, message: "Member removed" });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not remove member", message: error.message });
+  }
+});
+
+// === PROJECTS ===
+
+// Create project in team
+app.post("/teams/:teamId/projects", authenticateUser, async (req, res) => {
+  try {
+    const team = await Team.findById(req.params.teamId);
+    if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+
+    const member = team.members.find(m => m.user.toString() === req.user._id.toString());
+    if (!member || member.role === "viewer") {
+      return res.status(403).json({ success: false, error: "Not authorized to create projects" });
+    }
+
+    const { name, description } = req.body;
+    const project = new Project({
+      name,
+      description,
+      team: team._id,
+      creator: req.user._id
+    });
+    const saved = await project.save();
+    res.status(201).json({ success: true, project: saved });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not create project", message: error.message });
+  }
+});
+
+// Add poll to project
+app.post("/projects/:id/polls", authenticateUser, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ success: false, error: "Project not found" });
+
+    const { pollId } = req.body;
+    if (!project.polls.includes(pollId)) {
+      project.polls.push(pollId);
+      await project.save();
+    }
+    res.json({ success: true, project });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not add poll", message: error.message });
   }
 });
 

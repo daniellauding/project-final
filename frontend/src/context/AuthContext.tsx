@@ -4,6 +4,7 @@ import { authApi } from "../api/auth";
 interface User {
   userId: string;
   username: string;
+  avatarUrl?: string;
   accessToken: string;
 }
 
@@ -12,6 +13,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (username: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateUser: (data: Partial<User>) => void;
+  redirectPath: string | null;
+  setRedirectPath: (path: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,6 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const saved = localStorage.getItem("user");
     return saved ? JSON.parse(saved) : null;
   });
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -33,7 +38,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     const data = await authApi.login(email, password);
     if (data.success) {
-      setUser({ userId: data.userId, username: data.username, accessToken: data.accessToken });
+      setUser({
+        userId: data.userId,
+        username: data.username,
+        avatarUrl: data.avatarUrl || "",
+        accessToken: data.accessToken,
+      });
       return { success: true };
     }
     return { success: false, error: data.error };
@@ -42,7 +52,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (username: string, email: string, password: string) => {
     const data = await authApi.register(username, email, password);
     if (data.success) {
-      setUser({ userId: data.userId, username: data.username, accessToken: data.accessToken });
+      setUser({
+        userId: data.userId,
+        username: data.username,
+        avatarUrl: data.avatarUrl || "",
+        accessToken: data.accessToken,
+      });
       return { success: true };
     }
     return { success: false, error: data.error };
@@ -50,8 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => setUser(null);
 
+  const updateUser = (data: Partial<User>) => {
+    setUser((prev) => prev ? { ...prev, ...data } : null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, redirectPath, setRedirectPath }}>
       {children}
     </AuthContext.Provider>
   );
