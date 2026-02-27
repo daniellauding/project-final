@@ -262,6 +262,8 @@ app.get("/polls/:shareId", async (req, res) => {
     const results = poll.options.map((opt) => ({
       label: opt.label,
       imageUrl: opt.imageUrl,
+      videoUrl: opt.videoUrl,
+      audioUrl: opt.audioUrl,
       externalUrl: opt.externalUrl,
       embedUrl: opt.embedUrl,
       embedType: opt.embedType,
@@ -284,7 +286,7 @@ app.get("/polls/:shareId", async (req, res) => {
       thumbnail: r.options[0]?.imageUrl || null,
     }));
 
-    res.json({ ...poll.toObject(), totalVotes, results, remixes: remixData });
+    res.json({ ...poll.toObject(), totalVotes, results, remixes: remixData, allowAnonymousVotes: poll.allowAnonymousVotes });
   } catch (error) {
     res.status(500).json({ success: false, error: "Could not fetch poll", message: error.message });
   }
@@ -293,13 +295,14 @@ app.get("/polls/:shareId", async (req, res) => {
 // Create poll
 app.post("/polls", authenticateUser, async (req, res) => {
   try {
-    const { title, description, options, status } = req.body;
+    const { title, description, options, status, allowAnonymousVotes } = req.body;
 
     const poll = new Poll({
       title,
       description,
       options,
       status: status || "published",
+      allowAnonymousVotes: allowAnonymousVotes || false,
       creator: req.user._id,
       creatorName: req.user.username
     });
@@ -353,6 +356,36 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
   }
 });
 
+// Anonymous vote (no auth required — only if poll allows it)
+app.post("/polls/:id/vote-anonymous", async (req, res) => {
+  try {
+    const { optionIndex, fingerprint } = req.body;
+    const poll = await Poll.findById(req.params.id);
+
+    if (!poll) return res.status(404).json({ success: false, error: "Poll not found" });
+    if (!poll.allowAnonymousVotes) return res.status(403).json({ success: false, error: "This poll requires login to vote" });
+    if (poll.status === "closed") return res.status(400).json({ success: false, error: "This poll is closed" });
+    if (poll.deadline && new Date() > new Date(poll.deadline)) return res.status(400).json({ success: false, error: "Voting deadline has passed" });
+    if (optionIndex < 0 || optionIndex >= poll.options.length) return res.status(400).json({ success: false, error: "Invalid option index" });
+
+    // Use fingerprint string as a pseudo-ID to prevent repeat votes
+    const anonId = `anon_${fingerprint || req.ip}`;
+    const alreadyVoted = poll.options.some(opt => opt.votes.some(v => v.toString() === anonId));
+    if (alreadyVoted) {
+      // Remove old vote, add new (change vote)
+      poll.options.forEach(opt => {
+        opt.votes = opt.votes.filter(v => v.toString() !== anonId);
+      });
+    }
+
+    poll.options[optionIndex].votes.push(anonId);
+    await poll.save();
+    res.json({ success: true, message: "Anonymous vote recorded!" });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not vote", message: error.message });
+  }
+});
+
 // Unvote (remove your vote)
 app.post("/polls/:id/unvote", authenticateUser, async (req, res) => {
   try {
@@ -395,13 +428,14 @@ app.patch("/polls/:id", authenticateUser, async (req, res) => {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const { title, description, status, visibility, options, allowRemix, password, showWinner, deadline } = req.body;
+    const { title, description, status, visibility, options, allowRemix, allowAnonymousVotes, password, showWinner, deadline } = req.body;
     if (title) poll.title = title;
     if (description !== undefined) poll.description = description;
     if (status) poll.status = status;
     if (visibility) poll.visibility = visibility;
     if (options) poll.options = options;
     if (allowRemix !== undefined) poll.allowRemix = allowRemix;
+    if (allowAnonymousVotes !== undefined) poll.allowAnonymousVotes = allowAnonymousVotes;
     if (password !== undefined) poll.password = password;
     if (showWinner !== undefined) poll.showWinner = showWinner;
     if (deadline !== undefined) poll.deadline = deadline || null;
@@ -471,16 +505,23 @@ app.post("/polls/:id/remix", authenticateUser, async (req, res) => {
   }
 });
 
-// Upload
-app.post("/upload", authenticateUser, upload.single("image"), (req, res) => {
+// Upload (image, video, audio)
+app.post("/upload", authenticateUser, upload.single("file"), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, error: "No image provided" });
+      return res.status(400).json({ success: false, error: "No file provided" });
     }
+
+    const mime = req.file.mimetype || "";
+    let fileType = "image";
+    if (mime.startsWith("video/")) fileType = "video";
+    if (mime.startsWith("audio/")) fileType = "audio";
 
     res.json({
       success: true,
-      imageUrl: req.file.path,
+      url: req.file.path,
+      imageUrl: req.file.path, // backwards compat
+      fileType,
       publicId: req.file.filename
     });
   } catch (error) {

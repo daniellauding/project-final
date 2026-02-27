@@ -22,8 +22,9 @@ export const pollApi = {
   create: async (pollData: {
     title: string;
     description: string;
-    options: { label: string; imageUrl?: string; externalUrl?: string; embedUrl?: string }[];
+    options: { label: string; imageUrl?: string; videoUrl?: string; audioUrl?: string; externalUrl?: string; embedUrl?: string }[];
     status: string;
+    allowAnonymousVotes?: boolean;
   }) => {
     const res = await fetch(`${API_URL}/polls`, {
       method: "POST",
@@ -48,6 +49,20 @@ export const pollApi = {
     return res.json();
   },
 
+  voteAnonymous: async (pollId: string, optionIndex: number) => {
+    const fingerprint = localStorage.getItem("anon_fp") || (() => {
+      const fp = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("anon_fp", fp);
+      return fp;
+    })();
+    const res = await fetch(`${API_URL}/polls/${pollId}/vote-anonymous`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ optionIndex, fingerprint }),
+    });
+    return res.json();
+  },
+
   unvote: async (pollId: string) => {
     const res = await fetch(`${API_URL}/polls/${pollId}/unvote`, {
       method: "POST",
@@ -66,7 +81,7 @@ export const pollApi = {
 
   upload: async (file: File) => {
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file);
     const res = await fetch(`${API_URL}/upload`, {
       method: "POST",
       headers: { Authorization: getToken() },
@@ -75,7 +90,7 @@ export const pollApi = {
     return res.json();
   },
 
-update: async (pollId: string, data: { title?: string; description?: string; status?: string; visibility?: string; options?: any[]; allowRemix?: boolean; password?: string }) => {
+update: async (pollId: string, data: { title?: string; description?: string; status?: string; visibility?: string; options?: any[]; allowRemix?: boolean; allowAnonymousVotes?: boolean; showWinner?: boolean; deadline?: string; password?: string }) => {
     const res = await fetch(`${API_URL}/polls/${pollId}`, {
       method: "PATCH",
       headers: {

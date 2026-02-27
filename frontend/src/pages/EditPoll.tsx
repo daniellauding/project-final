@@ -19,10 +19,11 @@ const EditPoll = () => {
   const [visibility, setVisibility] = useState("public");
   const [password, setPassword] = useState("");
   const [allowRemix, setAllowRemix] = useState(true);
+  const [allowAnonymousVotes, setAllowAnonymousVotes] = useState(false);
   const [showWinner, setShowWinner] = useState(true);
   const [deadline, setDeadline] = useState("");
   const [pollStatus, setPollStatus] = useState("published");
-  const [options, setOptions] = useState<{ label: string; imageUrl: string; embedUrl: string }[]>([]);
+  const [options, setOptions] = useState<{ label: string; imageUrl: string; videoUrl: string; audioUrl: string; embedUrl: string }[]>([]);
   const [pollId, setPollId] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<number | null>(null);
@@ -35,6 +36,7 @@ const EditPoll = () => {
       setVisibility(data.visibility || "public");
       setPassword(data.password || "");
       setAllowRemix(data.allowRemix !== false);
+      setAllowAnonymousVotes(data.allowAnonymousVotes === true);
       setShowWinner(data.showWinner !== false);
       setDeadline(data.deadline ? new Date(data.deadline).toISOString().slice(0, 16) : "");
       setPollStatus(data.status || "published");
@@ -43,6 +45,8 @@ const EditPoll = () => {
         data.options.map((opt: any) => ({
           label: opt.label || "",
           imageUrl: opt.imageUrl || "",
+          videoUrl: opt.videoUrl || "",
+          audioUrl: opt.audioUrl || "",
           embedUrl: opt.embedUrl || "",
         }))
       );
@@ -57,7 +61,7 @@ const EditPoll = () => {
   };
 
   const addOption = () => {
-    setOptions([...options, { label: "", imageUrl: "", embedUrl: "" }]);
+    setOptions([...options, { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" }]);
   };
 
   const removeOption = (index: number) => {
@@ -66,12 +70,16 @@ const EditPoll = () => {
     }
   };
 
-  const handleImageUpload = async (index: number, file: File) => {
+  const handleFileUpload = async (index: number, file: File) => {
     setUploading(index);
     try {
       const data = await pollApi.upload(file);
-      if (data.imageUrl) {
-        updateOption(index, "imageUrl", data.imageUrl);
+      if (data.fileType === "video") {
+        updateOption(index, "videoUrl", data.url);
+      } else if (data.fileType === "audio") {
+        updateOption(index, "audioUrl", data.url);
+      } else {
+        updateOption(index, "imageUrl", data.url || data.imageUrl);
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -90,12 +98,15 @@ const EditPoll = () => {
         visibility,
         status: pollStatus,
         allowRemix,
+        allowAnonymousVotes,
         showWinner,
         deadline: deadline || undefined,
         password,
         options: options.map((opt) => ({
           label: opt.label,
           imageUrl: opt.imageUrl,
+          videoUrl: opt.videoUrl,
+          audioUrl: opt.audioUrl,
           embedUrl: opt.embedUrl,
         })),
       });
@@ -228,6 +239,11 @@ const EditPoll = () => {
           </label>
 
           <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={allowAnonymousVotes} onChange={(e) => setAllowAnonymousVotes(e.target.checked)} className="rounded" />
+            <span className="text-sm">Tillåt anonym röstning</span>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={allowRemix} onChange={(e) => setAllowRemix(e.target.checked)} className="rounded" />
             <span className="text-sm">Tillåt remix</span>
           </label>
@@ -257,37 +273,46 @@ const EditPoll = () => {
                 {opt.imageUrl ? (
                   <div className="relative">
                     <img src={opt.imageUrl} alt={opt.label} className="w-full h-40 object-cover rounded" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => updateOption(i, "imageUrl", "")}
-                    >
-                      Ta bort bild
+                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => updateOption(i, "imageUrl", "")}>
+                      Ta bort
+                    </Button>
+                  </div>
+                ) : opt.videoUrl ? (
+                  <div className="relative">
+                    <video src={opt.videoUrl} controls className="w-full h-40 rounded" />
+                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => updateOption(i, "videoUrl", "")}>
+                      Ta bort
+                    </Button>
+                  </div>
+                ) : opt.audioUrl ? (
+                  <div className="relative">
+                    <audio src={opt.audioUrl} controls className="w-full" />
+                    <Button type="button" variant="destructive" size="sm" className="mt-1" onClick={() => updateOption(i, "audioUrl", "")}>
+                      Ta bort
                     </Button>
                   </div>
                 ) : (
                   <div>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*,audio/*"
+                      capture="environment"
                       className="hidden"
-                      id={`edit-image-${i}`}
+                      id={`edit-file-${i}`}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleImageUpload(i, file);
+                        if (file) handleFileUpload(i, file);
                       }}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => document.getElementById(`edit-image-${i}`)?.click()}
+                      onClick={() => document.getElementById(`edit-file-${i}`)?.click()}
                       disabled={uploading === i}
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      {uploading === i ? "Laddar upp..." : "Ladda upp bild"}
+                      {uploading === i ? "Laddar upp..." : "Ladda upp fil"}
                     </Button>
                   </div>
                 )}

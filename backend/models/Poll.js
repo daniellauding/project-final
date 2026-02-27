@@ -19,6 +19,14 @@ const optionSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  videoUrl: {
+    type: String,
+    default: ""
+  },
+  audioUrl: {
+    type: String,
+    default: ""
+  },
   embedType: {
     type: String,
     enum: ["none", "figma", "lovable", "codepen", "generic"],
@@ -82,6 +90,10 @@ const pollSchema = new mongoose.Schema({
   allowRemix: {
     type: Boolean,
     default: true
+  },
+  allowAnonymousVotes: {
+    type: Boolean,
+    default: false
   },
   password: {
     type: String,

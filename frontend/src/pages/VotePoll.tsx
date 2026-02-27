@@ -16,6 +16,8 @@ import { toEmbedUrl } from "../utils/embedUrl";
 interface PollOption {
   label: string;
   imageUrl?: string;
+  videoUrl?: string;
+  audioUrl?: string;
   embedUrl?: string;
   voteCount: number;
   percentage: number;
@@ -41,6 +43,7 @@ interface Poll {
   totalVotes: number;
   results: PollOption[];
   allowRemix: boolean;
+  allowAnonymousVotes: boolean;
   showWinner: boolean;
   status: string;
   deadline: string | null;
@@ -120,10 +123,17 @@ const VotePoll = () => {
   useEffect(() => { if (panel === "comments" && poll) fetchComments(); }, [panel, poll]);
 
   const handleVote = async (optionIndex: number) => {
-    if (!user || voting) return;
+    if (voting) return;
     setVoting(true);
     try {
-      const data = await pollApi.vote(poll!._id, optionIndex);
+      let data;
+      if (user) {
+        data = await pollApi.vote(poll!._id, optionIndex);
+      } else if (poll?.allowAnonymousVotes) {
+        data = await pollApi.voteAnonymous(poll!._id, optionIndex);
+      } else {
+        return;
+      }
       if (data.success) {
         setVotedIndex(optionIndex);
         fetchPoll();
@@ -236,6 +246,15 @@ const VotePoll = () => {
             className="w-full h-full border-0"
             allowFullScreen
           />
+        ) : opt.videoUrl ? (
+          <div className="w-full h-full flex items-center justify-center bg-black">
+            <video src={opt.videoUrl} controls className="max-w-full max-h-full" />
+          </div>
+        ) : opt.audioUrl ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-4">
+            <span className="text-3xl font-bold text-muted-foreground/30">{opt.label}</span>
+            <audio src={opt.audioUrl} controls className="w-80 max-w-[90%]" />
+          </div>
         ) : opt.imageUrl ? (
           <img src={opt.imageUrl} alt={opt.label} className="w-full h-full object-contain bg-muted" />
         ) : (
@@ -259,7 +278,7 @@ const VotePoll = () => {
           >
             <ThumbsUp className="h-5 w-5" />
           </button>
-        ) : user ? (
+        ) : user || poll.allowAnonymousVotes ? (
           <button
             onClick={() => handleVote(current)}
             disabled={voting || isVotedOption}

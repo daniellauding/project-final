@@ -10,16 +10,26 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: "designvote",
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp", "gif"],
-    transformation: [{ width: 1200, crop: "limit" }],
+  params: async (req, file) => {
+    const isVideo = file.mimetype.startsWith("video/");
+    const isAudio = file.mimetype.startsWith("audio/");
+
+    return {
+      folder: "designvote",
+      resource_type: isVideo ? "video" : isAudio ? "video" : "image",
+      allowed_formats: [
+        "jpg", "jpeg", "png", "gif", "webp", "svg",
+        "mp4", "mov", "webm", "avi",
+        "mp3", "wav", "ogg", "m4a",
+      ],
+      transformation: isVideo || isAudio ? [] : [{ width: 1200, crop: "limit" }],
+    };
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for video
 });
 
 export default upload;

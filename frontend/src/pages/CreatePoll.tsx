@@ -19,9 +19,10 @@ const CreatePoll = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [options, setOptions] = useState([
-    { label: "", imageUrl: "", embedUrl: "" },
-    { label: "", imageUrl: "", embedUrl: "" },
+    { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" },
+    { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" },
   ]);
+  const [allowAnonymousVotes, setAllowAnonymousVotes] = useState(false);
   const [uploading, setUploading] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingRemix, setLoadingRemix] = useState(!!remixFrom);
@@ -72,7 +73,7 @@ const CreatePoll = () => {
   };
 
   const addOption = () => {
-    setOptions([...options, { label: "", imageUrl: "", embedUrl: "" }]);
+    setOptions([...options, { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" }]);
   };
 
   const removeOption = (index: number) => {
@@ -81,12 +82,16 @@ const CreatePoll = () => {
     }
   };
 
-  const handleImageUpload = async (index: number, file: File) => {
+  const handleFileUpload = async (index: number, file: File) => {
     setUploading(index);
     try {
       const data = await pollApi.upload(file);
-      if (data.imageUrl) {
-        updateOption(index, "imageUrl", data.imageUrl);
+      if (data.fileType === "video") {
+        updateOption(index, "videoUrl", data.url);
+      } else if (data.fileType === "audio") {
+        updateOption(index, "audioUrl", data.url);
+      } else {
+        updateOption(index, "imageUrl", data.url || data.imageUrl);
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -105,10 +110,13 @@ const CreatePoll = () => {
         options: options.map((opt) => ({
           label: opt.label,
           imageUrl: opt.imageUrl,
+          videoUrl: opt.videoUrl,
+          audioUrl: opt.audioUrl,
           externalUrl: "",
           embedUrl: opt.embedUrl,
         })),
         status: "published",
+        allowAnonymousVotes,
       });
       if (data.success) {
         navigate(`/poll/${data.poll.shareId}`);
@@ -193,19 +201,50 @@ const CreatePoll = () => {
                       className="absolute top-2 right-2"
                       onClick={() => updateOption(i, "imageUrl", "")}
                     >
-                      Ta bort bild
+                      Ta bort
+                    </Button>
+                  </div>
+                ) : opt.videoUrl ? (
+                  <div className="relative">
+                    <video
+                      src={opt.videoUrl}
+                      controls
+                      className="w-full h-40 rounded"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => updateOption(i, "videoUrl", "")}
+                    >
+                      Ta bort
+                    </Button>
+                  </div>
+                ) : opt.audioUrl ? (
+                  <div className="relative">
+                    <audio src={opt.audioUrl} controls className="w-full" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="mt-1"
+                      onClick={() => updateOption(i, "audioUrl", "")}
+                    >
+                      Ta bort
                     </Button>
                   </div>
                 ) : (
                   <div>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*,audio/*"
+                      capture="environment"
                       className="hidden"
-                      id={`image-${i}`}
+                      id={`file-${i}`}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleImageUpload(i, file);
+                        if (file) handleFileUpload(i, file);
                       }}
                     />
                     <Button
@@ -213,12 +252,12 @@ const CreatePoll = () => {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        document.getElementById(`image-${i}`)?.click()
+                        document.getElementById(`file-${i}`)?.click()
                       }
                       disabled={uploading === i}
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      {uploading === i ? "Laddar upp..." : "Ladda upp bild (valfri)"}
+                      {uploading === i ? "Laddar upp..." : "Ladda upp fil (valfri)"}
                     </Button>
                   </div>
                 )}
@@ -251,6 +290,11 @@ const CreatePoll = () => {
             Lägg till alternativ
           </Button>
         </div>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" checked={allowAnonymousVotes} onChange={(e) => setAllowAnonymousVotes(e.target.checked)} className="rounded" />
+          <span className="text-sm">Tillåt anonym röstning (utan inloggning)</span>
+        </label>
 
         <Button type="submit" className="w-full" disabled={submitting}>
           {submitting ? "Skapar..." : remixFrom ? "Publicera remix" : "Publicera poll"}
