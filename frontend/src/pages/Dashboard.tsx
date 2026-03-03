@@ -153,7 +153,7 @@ const Dashboard = () => {
                     <Share2 className="mr-1 h-3 w-3" />
                     Dela
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDelete(poll._id); }}>
+                  <Button size="sm" variant="destructive" aria-label="Ta bort poll" onClick={(e) => { e.stopPropagation(); handleDelete(poll._id); }}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>

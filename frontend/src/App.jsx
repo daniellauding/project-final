@@ -14,7 +14,11 @@ export const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded">
+          Hoppa till innehåll
+        </a>
         <Header />
+        <main id="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -24,6 +28,7 @@ export const App = () => {
           <Route path="/poll/:shareId/edit" element={<EditPoll />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
+        </main>
         <Toaster />
       </AuthProvider>
     </BrowserRouter>

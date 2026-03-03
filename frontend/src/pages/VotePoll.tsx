@@ -288,8 +288,8 @@ const VotePoll = () => {
         {isClosed ? (
           <button
             disabled
-            className="p-2 rounded-full bg-gray-400 text-white shadow-lg cursor-not-allowed"
-            title="Röstningen är stängd"
+            className="p-3 rounded-full bg-gray-400 text-white shadow-lg cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Röstningen är stängd"
           >
             <ThumbsUp className="h-5 w-5" />
           </button>
@@ -297,20 +297,20 @@ const VotePoll = () => {
           <button
             onClick={() => handleVote(current)}
             disabled={voting || isVotedOption}
-            className={`p-2 rounded-full shadow-lg transition ${
+            className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
               isVotedOption
                 ? "bg-green-500 text-white"
                 : "bg-white/90 hover:bg-white text-foreground"
             }`}
-            title={isVotedOption ? "Din röst" : hasVoted ? "Byt röst hit" : "Rösta"}
+            aria-label={isVotedOption ? "Din röst" : hasVoted ? "Byt röst hit" : "Rösta"}
           >
             <ThumbsUp className="h-5 w-5" />
           </button>
         ) : (
           <button
             onClick={promptLogin}
-            className="p-2 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground"
-            title="Logga in för att rösta"
+            className="p-3 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Logga in för att rösta"
           >
             <LogIn className="h-5 w-5" />
           </button>
@@ -319,44 +319,44 @@ const VotePoll = () => {
         {/* Results */}
         <button
           onClick={() => setPanel(panel === "results" ? null : "results")}
-          className={`p-2 rounded-full shadow-lg transition ${
+          className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
             panel === "results" ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-foreground"
           }`}
-          title="Resultat"
+          aria-label="Visa resultat"
         >
-          <BarChart3 className="h-4 w-4" />
+          <BarChart3 className="h-5 w-5" />
         </button>
 
         {/* Comments */}
         <button
           onClick={() => setPanel(panel === "comments" ? null : "comments")}
-          className={`p-2 rounded-full shadow-lg transition ${
+          className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
             panel === "comments" ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-foreground"
           }`}
-          title="Kommentarer"
+          aria-label="Kommentarer"
         >
-          <MessageCircle className="h-4 w-4" />
+          <MessageCircle className="h-5 w-5" />
         </button>
 
         {/* Share */}
         <button
           onClick={() => { navigator.clipboard.writeText(window.location.href); toast("Länk kopierad!"); }}
-          className="p-2 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground"
-          title="Dela"
+          className="p-3 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Dela länk"
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-5 w-5" />
         </button>
 
         {/* Remixes */}
         {poll.remixes && poll.remixes.length > 0 && (
           <button
             onClick={() => setPanel(panel === "remixes" ? null : "remixes")}
-            className={`p-2 rounded-full shadow-lg transition ${
+            className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
               panel === "remixes" ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-foreground"
             }`}
-            title={`${poll.remixes.length} remixes`}
+            aria-label={`${poll.remixes.length} remixes`}
           >
-            <GitBranch className="h-4 w-4" />
+            <GitBranch className="h-5 w-5" />
           </button>
         )}
 
@@ -364,10 +364,10 @@ const VotePoll = () => {
         {user && !isOwner && (
           <button
             onClick={() => setPanel(panel === "report" ? null : "report")}
-            className="p-2 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground"
-            title="Rapportera"
+            className="p-3 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Rapportera"
           >
-            <Flag className="h-4 w-4" />
+            <Flag className="h-5 w-5" />
           </button>
         )}
       </div>
@@ -388,13 +388,15 @@ const VotePoll = () => {
         <div className="absolute top-2 right-12 z-10 flex gap-1">
           <Link
             to={`/poll/${poll.shareId}/edit`}
-            className="p-2 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground"
+            className="p-2.5 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Redigera poll"
           >
             <Pencil className="h-4 w-4" />
           </Link>
           <button
             onClick={handleDelete}
-            className="p-2 rounded-full bg-red-500 hover:bg-red-600 shadow-lg text-white"
+            className="p-2.5 rounded-full bg-red-500 hover:bg-red-600 shadow-lg text-white focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Ta bort poll"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -421,24 +423,27 @@ const VotePoll = () => {
       {/* === BOTTOM-CENTER — dots + nav === */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
         {current > 0 && (
-          <button onClick={prev} className="p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60">
-            <ChevronLeft className="h-4 w-4" />
+          <button onClick={prev} className="p-2.5 rounded-full bg-black/40 text-white hover:bg-black/60 focus-visible:ring-2 focus-visible:ring-white" aria-label="Föregående alternativ">
+            <ChevronLeft className="h-5 w-5" />
           </button>
         )}
-        <div className="flex gap-1 bg-black/40 rounded-full px-2 py-1">
-          {poll.results.map((_, i) => (
+        <div className="flex gap-1.5 bg-black/40 rounded-full px-3 py-2" role="tablist" aria-label="Alternativ">
+          {poll.results.map((r, i) => (
             <button
               key={i}
+              role="tab"
+              aria-selected={i === current}
+              aria-label={`Alternativ ${i + 1}: ${r.label}`}
               onClick={() => setCurrent(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === current ? "bg-white w-4" : "bg-white/40 w-1.5"
+              className={`h-2.5 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-white ${
+                i === current ? "bg-white w-5" : "bg-white/40 w-2.5"
               }`}
             />
           ))}
         </div>
         {current < poll.results.length - 1 && (
-          <button onClick={next} className="p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60">
-            <ChevronRight className="h-4 w-4" />
+          <button onClick={next} className="p-2.5 rounded-full bg-black/40 text-white hover:bg-black/60 focus-visible:ring-2 focus-visible:ring-white" aria-label="Nästa alternativ">
+            <ChevronRight className="h-5 w-5" />
           </button>
         )}
       </div>
@@ -522,7 +527,9 @@ const VotePoll = () => {
                 <div>
                   {user && (
                     <div className="flex gap-2 mb-4">
+                      <label htmlFor="comment-input" className="sr-only">Skriv en kommentar</label>
                       <input
+                        id="comment-input"
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         placeholder="Skriv en kommentar..."

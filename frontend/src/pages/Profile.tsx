@@ -111,7 +111,7 @@ const Profile = () => {
             >
               <div className="h-10 w-10 rounded bg-muted overflow-hidden shrink-0">
                 {poll.options[0]?.imageUrl ? (
-                  <img src={poll.options[0].imageUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={poll.options[0].imageUrl} alt={poll.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
                     {poll.options.length}
