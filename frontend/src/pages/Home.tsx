@@ -52,7 +52,7 @@ const Home = () => {
                 <Link
                   key={poll._id}
                   to={`/poll/${poll.shareId}`}
-                  className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow"
+                  className="group block rounded-lg border bg-card overflow-hidden hover:bg-accent/50 transition-colors"
                 >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {thumb ? (

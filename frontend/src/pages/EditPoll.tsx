@@ -81,8 +81,8 @@ const EditPoll = () => {
       } else {
         updateOption(index, "imageUrl", data.url || data.imageUrl);
       }
-    } catch (err) {
-      console.error("Upload failed:", err);
+    } catch {
+      // ignored
     } finally {
       setUploading(null);
     }
@@ -111,8 +111,8 @@ const EditPoll = () => {
         })),
       });
       navigate(`/poll/${shareId}`);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     } finally {
       setSaving(false);
     }

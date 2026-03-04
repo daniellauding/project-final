@@ -100,13 +100,13 @@ const Dashboard = () => {
               <Link
                 key={poll._id}
                 to={`/poll/${poll.shareId}`}
-                className="group block rounded-lg border bg-card overflow-hidden hover:shadow-lg transition-shadow"
+                className="group block rounded-lg border bg-card overflow-hidden hover:bg-accent/50 transition-colors"
               >
                 <div className="aspect-video bg-muted relative overflow-hidden">
                   {thumb ? (
                     <img src={thumb} alt={poll.title} className="w-full h-full object-cover" />
                   ) : hasEmbed ? (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
                       <span className="text-2xl font-bold text-muted-foreground/50">Embed</span>
                     </div>
                   ) : (

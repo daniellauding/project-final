@@ -27,8 +27,8 @@ const Results = () => {
       try {
         const data = await pollApi.getByShareId(shareId!);
         setPoll(data);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // ignored
       } finally {
         setLoading(false);
       }

@@ -44,8 +44,8 @@ const CreatePoll = () => {
             }))
           );
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // ignored
       } finally {
         setLoadingRemix(false);
       }
@@ -93,8 +93,8 @@ const CreatePoll = () => {
       } else {
         updateOption(index, "imageUrl", data.url || data.imageUrl);
       }
-    } catch (err) {
-      console.error("Upload failed:", err);
+    } catch {
+      // ignored
     } finally {
       setUploading(null);
     }
@@ -121,8 +121,8 @@ const CreatePoll = () => {
       if (data.success) {
         navigate(`/poll/${data.poll.shareId}`);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     } finally {
       setSubmitting(false);
     }

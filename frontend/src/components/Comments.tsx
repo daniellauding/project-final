@@ -23,8 +23,8 @@ const Comments = ({ pollId }: { pollId: string }) => {
     try {
       const data = await pollApi.getComments(pollId);
       if (Array.isArray(data)) setComments(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     }
   };
 
@@ -40,8 +40,8 @@ const Comments = ({ pollId }: { pollId: string }) => {
       await pollApi.addComment(pollId, { text });
       setText("");
       fetchComments();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     } finally {
       setSending(false);
     }

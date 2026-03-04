@@ -102,8 +102,8 @@ const VotePoll = () => {
         );
         setVotedIndex(idx >= 0 ? idx : null);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     } finally {
       setLoading(false);
     }
@@ -114,8 +114,8 @@ const VotePoll = () => {
     try {
       const data = await pollApi.getComments(poll._id);
       setComments(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     }
   };
 
@@ -139,8 +139,8 @@ const VotePoll = () => {
         fetchPoll();
         toast(votedIndex !== null ? "Röst ändrad!" : "Röstat!");
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     } finally {
       setVoting(false);
     }
@@ -288,7 +288,7 @@ const VotePoll = () => {
         {isClosed ? (
           <button
             disabled
-            className="p-3 rounded-full bg-gray-400 text-white shadow-lg cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-3 rounded-full bg-gray-400 text-white border border-border cursor-not-allowed focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Röstningen är stängd"
           >
             <ThumbsUp className="h-5 w-5" />
@@ -297,10 +297,10 @@ const VotePoll = () => {
           <button
             onClick={() => handleVote(current)}
             disabled={voting || isVotedOption}
-            className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`p-3 rounded-full border border-border transition focus-visible:ring-2 focus-visible:ring-ring ${
               isVotedOption
                 ? "bg-green-500 text-white"
-                : "bg-white/90 hover:bg-white text-foreground"
+                : "bg-white hover:bg-secondary text-foreground"
             }`}
             aria-label={isVotedOption ? "Din röst" : hasVoted ? "Byt röst hit" : "Rösta"}
           >
@@ -309,7 +309,7 @@ const VotePoll = () => {
         ) : (
           <button
             onClick={promptLogin}
-            className="p-3 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-3 rounded-full bg-white hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Logga in för att rösta"
           >
             <LogIn className="h-5 w-5" />
@@ -319,8 +319,8 @@ const VotePoll = () => {
         {/* Results */}
         <button
           onClick={() => setPanel(panel === "results" ? null : "results")}
-          className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
-            panel === "results" ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-foreground"
+          className={`p-3 rounded-full border border-border transition focus-visible:ring-2 focus-visible:ring-ring ${
+            panel === "results" ? "bg-primary text-white" : "bg-white hover:bg-secondary text-foreground"
           }`}
           aria-label="Visa resultat"
         >
@@ -330,8 +330,8 @@ const VotePoll = () => {
         {/* Comments */}
         <button
           onClick={() => setPanel(panel === "comments" ? null : "comments")}
-          className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
-            panel === "comments" ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-foreground"
+          className={`p-3 rounded-full border border-border transition focus-visible:ring-2 focus-visible:ring-ring ${
+            panel === "comments" ? "bg-primary text-white" : "bg-white hover:bg-secondary text-foreground"
           }`}
           aria-label="Kommentarer"
         >
@@ -341,7 +341,7 @@ const VotePoll = () => {
         {/* Share */}
         <button
           onClick={() => { navigator.clipboard.writeText(window.location.href); toast("Länk kopierad!"); }}
-          className="p-3 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="p-3 rounded-full bg-white hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Dela länk"
         >
           <Share2 className="h-5 w-5" />
@@ -351,8 +351,8 @@ const VotePoll = () => {
         {poll.remixes && poll.remixes.length > 0 && (
           <button
             onClick={() => setPanel(panel === "remixes" ? null : "remixes")}
-            className={`p-3 rounded-full shadow-lg transition focus-visible:ring-2 focus-visible:ring-ring ${
-              panel === "remixes" ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-foreground"
+            className={`p-3 rounded-full border border-border transition focus-visible:ring-2 focus-visible:ring-ring ${
+              panel === "remixes" ? "bg-primary text-white" : "bg-white hover:bg-secondary text-foreground"
             }`}
             aria-label={`${poll.remixes.length} remixes`}
           >
@@ -364,7 +364,7 @@ const VotePoll = () => {
         {user && !isOwner && (
           <button
             onClick={() => setPanel(panel === "report" ? null : "report")}
-            className="p-3 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-3 rounded-full bg-white hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Rapportera"
           >
             <Flag className="h-5 w-5" />
@@ -374,7 +374,7 @@ const VotePoll = () => {
 
       {/* === TOP-LEFT — poll info (small, transparent) === */}
       <div className="absolute top-2 left-2 z-10 max-w-[60%]">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white">
+        <div className="bg-foreground/80 rounded-lg px-3 py-1.5 text-white">
           <p className="text-sm font-medium truncate">{poll.title}</p>
           <p className="text-xs opacity-70">
             {poll.creatorName} · {poll.totalVotes} röster
@@ -388,14 +388,14 @@ const VotePoll = () => {
         <div className="absolute top-2 right-12 z-10 flex gap-1">
           <Link
             to={`/poll/${poll.shareId}/edit`}
-            className="p-2.5 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-2.5 rounded-full bg-white hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Redigera poll"
           >
             <Pencil className="h-4 w-4" />
           </Link>
           <button
             onClick={handleDelete}
-            className="p-2.5 rounded-full bg-red-500 hover:bg-red-600 shadow-lg text-white focus-visible:ring-2 focus-visible:ring-ring"
+            className="p-2.5 rounded-full bg-red-500 hover:bg-red-600 border border-border text-white focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Ta bort poll"
           >
             <Trash2 className="h-4 w-4" />
@@ -405,7 +405,7 @@ const VotePoll = () => {
 
       {/* === BOTTOM-LEFT — option label + percentage === */}
       <div className="absolute bottom-2 left-2 z-10">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 text-white">
+        <div className="bg-foreground/80 rounded-lg px-3 py-1.5 text-white">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{opt.label}</span>
             {isLeader && hasVoted && <span className="text-xs bg-yellow-500/80 px-1.5 py-0.5 rounded">Leder</span>}
@@ -413,7 +413,7 @@ const VotePoll = () => {
             {hasVoted && <span className="text-xs opacity-80">{opt.percentage}%</span>}
           </div>
           {hasVoted && (
-            <div className="w-full bg-white/20 rounded-full h-1 mt-1">
+            <div className="w-full bg-white/30 rounded-full h-1 mt-1">
               <div className="bg-white h-1 rounded-full transition-all" style={{ width: `${opt.percentage}%` }} />
             </div>
           )}
@@ -423,11 +423,11 @@ const VotePoll = () => {
       {/* === BOTTOM-CENTER — dots + nav === */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
         {current > 0 && (
-          <button onClick={prev} className="p-2.5 rounded-full bg-black/40 text-white hover:bg-black/60 focus-visible:ring-2 focus-visible:ring-white" aria-label="Föregående alternativ">
+          <button onClick={prev} className="p-2.5 rounded-full bg-foreground/70 text-white hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-white" aria-label="Föregående alternativ">
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
-        <div className="flex gap-1.5 bg-black/40 rounded-full px-3 py-2" role="tablist" aria-label="Alternativ">
+        <div className="flex gap-1.5 bg-foreground/70 rounded-full px-3 py-2" role="tablist" aria-label="Alternativ">
           {poll.results.map((r, i) => (
             <button
               key={i}
@@ -436,13 +436,13 @@ const VotePoll = () => {
               aria-label={`Alternativ ${i + 1}: ${r.label}`}
               onClick={() => setCurrent(i)}
               className={`h-2.5 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-white ${
-                i === current ? "bg-white w-5" : "bg-white/40 w-2.5"
+                i === current ? "bg-white w-5" : "bg-white/50 w-2.5"
               }`}
             />
           ))}
         </div>
         {current < poll.results.length - 1 && (
-          <button onClick={next} className="p-2.5 rounded-full bg-black/40 text-white hover:bg-black/60 focus-visible:ring-2 focus-visible:ring-white" aria-label="Nästa alternativ">
+          <button onClick={next} className="p-2.5 rounded-full bg-foreground/70 text-white hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-white" aria-label="Nästa alternativ">
             <ChevronRight className="h-5 w-5" />
           </button>
         )}
@@ -453,7 +453,7 @@ const VotePoll = () => {
         <div className="absolute bottom-2 right-12 z-10">
           <button
             onClick={() => navigate(`/create?remix=${poll.shareId}`)}
-            className="px-3 py-1.5 rounded-full bg-white/90 hover:bg-white shadow-lg text-foreground text-xs font-medium"
+            className="px-3 py-1.5 rounded-full bg-white hover:bg-secondary border border-border text-foreground text-xs font-medium"
           >
             Remix
           </button>
@@ -467,7 +467,7 @@ const VotePoll = () => {
           <div className="absolute inset-0 z-20" onClick={() => setPanel(null)} />
 
           {/* Panel */}
-          <div className="absolute bottom-0 left-0 right-0 z-30 bg-background rounded-t-2xl shadow-2xl max-h-[50vh] flex flex-col">
+          <div className="absolute bottom-0 left-0 right-0 z-30 bg-background rounded-t-lg border-t max-h-[50vh] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
               <h2 className="font-semibold text-sm">
                 {panel === "results" && "Resultat"}
@@ -584,7 +584,7 @@ const VotePoll = () => {
                     <Link
                       key={r._id}
                       to={`/poll/${r.shareId}`}
-                      className="rounded-lg border overflow-hidden hover:shadow transition"
+                      className="rounded-lg border overflow-hidden hover:bg-accent/50 transition-colors"
                     >
                       <div className="h-20 bg-muted">
                         {r.thumbnail ? (

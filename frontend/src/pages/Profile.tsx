@@ -29,8 +29,8 @@ const Profile = () => {
         if (data.results) {
           setPolls(data.results.filter((p: Poll) => p.creator === user?.userId));
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // ignored
       } finally {
         setLoading(false);
       }
@@ -49,8 +49,8 @@ const Profile = () => {
         headers: { Authorization: token },
       });
       logout();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignored
     }
   };
 
