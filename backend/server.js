@@ -273,6 +273,8 @@ app.get("/polls/:shareId", async (req, res) => {
       externalUrl: opt.externalUrl,
       embedUrl: opt.embedUrl,
       embedType: opt.embedType,
+      textContent: opt.textContent,
+      coverUrl: opt.coverUrl,
       voteCount: opt.votes.length,
       votes: opt.votes,
       percentage: totalVotes > 0 ? Math.round((opt.votes.length / totalVotes) * 100) : 0
@@ -506,6 +508,8 @@ app.post("/polls/:id/remix", authenticateUser, async (req, res) => {
         audioUrl: opt.audioUrl,
         fileUrl: opt.fileUrl,
         fileName: opt.fileName,
+        textContent: opt.textContent,
+        coverUrl: opt.coverUrl,
         votes: []
       })),
       creator: req.user._id,
@@ -521,28 +525,32 @@ app.post("/polls/:id/remix", authenticateUser, async (req, res) => {
 });
 
 // Upload (image, video, audio)
-app.post("/upload", authenticateUser, upload.single("file"), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: "No file provided" });
+app.post("/upload", authenticateUser, (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      console.error("Upload error:", err);
+      return res.status(500).json({ success: false, error: "Upload failed", message: err.message });
     }
-
-    const mime = req.file.mimetype || "";
-    let fileType = "image";
-    if (mime.startsWith("video/")) fileType = "video";
-    else if (mime.startsWith("audio/")) fileType = "audio";
-    else if (!mime.startsWith("image/")) fileType = "file";
-
-    res.json({
-      success: true,
-      url: req.file.path,
-      imageUrl: req.file.path, // backwards compat
-      fileType,
-      publicId: req.file.filename
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: "Upload failed", message: error.message });
+    next();
+  });
+}, (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, error: "No file provided" });
   }
+
+  const mime = req.file.mimetype || "";
+  let fileType = "image";
+  if (mime.startsWith("video/")) fileType = "video";
+  else if (mime.startsWith("audio/")) fileType = "audio";
+  else if (!mime.startsWith("image/")) fileType = "file";
+
+  res.json({
+    success: true,
+    url: req.file.path,
+    imageUrl: req.file.path, // backwards compat
+    fileType,
+    publicId: req.file.filename
+  });
 });
 
 // Comments

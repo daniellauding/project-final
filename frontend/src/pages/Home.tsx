@@ -156,31 +156,71 @@ function QuoteCarousel() {
   );
 }
 
-/* ── Rotating words ── */
-const rotatingWords = ["Design feedback,", "Client reviews,", "Design crits,", "Team decisions,"];
+/* ── Sequential animated words — plays once after intro, stays on last ── */
+const sequenceWords = ["Design feedback,", "Client reviews,", "Sound design picks,", "Creative decisions,"];
+const SEQ_INTERVAL = 800; // ms per word
 
-function RotatingWord() {
-  const [idx, setIdx] = useState(0);
+function RotatingWord({ started, skipAnim }: { started: boolean; skipAnim: boolean }) {
+  const [idx, setIdx] = useState(skipAnim ? sequenceWords.length - 1 : -1);
+
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % rotatingWords.length), 2800);
-    return () => clearInterval(t);
-  }, []);
+    if (!started || skipAnim) return;
+    const t = setTimeout(() => setIdx(0), 100);
+    return () => clearTimeout(t);
+  }, [started, skipAnim]);
+
+  useEffect(() => {
+    if (idx < 0 || idx >= sequenceWords.length - 1) return;
+    const t = setTimeout(() => setIdx((i) => i + 1), SEQ_INTERVAL);
+    return () => clearTimeout(t);
+  }, [idx]);
 
   return (
     <span className="inline-grid">
-      {rotatingWords.map((word, i) => (
+      {sequenceWords.map((word, i) => (
         <span
           key={word}
-          className="col-start-1 row-start-1 transition-all duration-500 ease-in-out"
+          className={`col-start-1 row-start-1 ${skipAnim ? "" : "transition-all duration-500 ease-in-out"}`}
           style={{
-            transform: i === idx ? "translateY(0)" : "translateY(110%)",
+            transform: i === idx ? "translateY(0)" : i < idx ? "translateY(-110%)" : "translateY(110%)",
             opacity: i === idx ? 1 : 0,
-            clipPath: "inset(0 0 -10% 0)",
+            clipPath: "inset(-10% 0 -10% 0)",
           }}
         >
           {word}
         </span>
       ))}
+    </span>
+  );
+}
+
+/* ── Staggered reveal helper — skip=true shows instantly ── */
+function StaggerIn({ show, delay, skip, children, className = "" }: { show: boolean; delay: number; skip?: boolean; children: ReactNode; className?: string }) {
+  const instant = skip || false;
+  const [visible, setVisible] = useState(instant);
+  useEffect(() => {
+    if (instant || !show) return;
+    const t = setTimeout(() => setVisible(true), delay);
+    return () => clearTimeout(t);
+  }, [show, delay, instant]);
+  return (
+    <div className={`${instant ? "" : "transition-all duration-700 ease-out"} ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ── "without the noise" — appears after last rotating word ── */
+function WithoutTheNoise({ started, skipAnim }: { started: boolean; skipAnim: boolean }) {
+  const [visible, setVisible] = useState(skipAnim);
+  useEffect(() => {
+    if (!started || skipAnim) return;
+    const t = setTimeout(() => setVisible(true), 100 + sequenceWords.length * SEQ_INTERVAL + 200);
+    return () => clearTimeout(t);
+  }, [started, skipAnim]);
+  return (
+    <span className={`inline-block ${skipAnim ? "" : "transition-all duration-700 ease-out"} ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+      without the noise
     </span>
   );
 }
@@ -424,7 +464,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
       `}</style>
       {/* Header: label + arrows */}
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-sm font-medium text-foreground">Recent polls</span>
+        <span className="text-sm font-medium text-foreground">Recent designs</span>
         <div className="flex gap-1.5">
           <button onClick={prev} className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Previous">
             <ChevronLeft className="h-3.5 w-3.5" />
@@ -439,9 +479,9 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
         {isCtaSlide ? (
           <div className="w-[340px] xl:w-[380px] h-[480px] xl:h-[520px] rounded-2xl border border-border/40 bg-card shadow-lg flex flex-col items-center justify-center text-center p-8 gap-4">
             <h3 className="text-xl font-semibold">Your turn</h3>
-            <p className="text-sm text-muted-foreground">Share your work and get real feedback in minutes.</p>
+            <p className="text-sm text-muted-foreground">Share your designs and see which idea wins.</p>
             <button onClick={onCta} className="mt-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:brightness-110 transition flex items-center gap-2">
-              Share your work <ArrowRight className="h-4 w-4" />
+              Share your designs <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         ) : (
@@ -449,11 +489,50 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
             className="group block w-[340px] xl:w-[380px] rounded-2xl border border-border/40 bg-card overflow-hidden shadow-lg hover:shadow-xl transition-all">
             <div className="h-[400px] xl:h-[440px] bg-muted relative overflow-hidden">
               {thumb ? (
-                <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                <>
+                  <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                  {/* Play icon for video/audio polls */}
+                  {poll.options.some((o: any) => o.videoUrl || o.audioUrl) && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-foreground/40 backdrop-blur-sm flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-background ml-0.5" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : poll.options.some((o: any) => o.audioUrl) ? (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-muted/50">
+                  <div className="w-20 h-20 rounded-full bg-foreground/5 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-10 h-10 text-muted-foreground/25" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M9 18V5l12-2v13" strokeLinecap="round" strokeLinejoin="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm text-muted-foreground/40">{poll.options.length} tracks</span>
+                </div>
+              ) : poll.options.some((o: any) => o.textContent) ? (
+                <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6 overflow-hidden relative">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="px-2 py-0.5 rounded bg-foreground/10 text-[10px] font-mono font-bold uppercase tracking-wide">
+                      {(poll.options.find((o: any) => o.textContent)?.fileName || "").split('.').pop() || "md"}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate">{poll.options.find((o: any) => o.textContent)?.fileName}</span>
+                  </div>
+                  <div className="flex-1 text-xs leading-relaxed text-muted-foreground/70 font-mono overflow-hidden">
+                    {(poll.options.find((o: any) => o.textContent)?.textContent || "").slice(0, 300).split('\n').slice(0, 12).map((line: string, li: number) => (
+                      <div key={li} className={line.startsWith('#') ? "font-semibold text-foreground/60 mt-1" : ""}>{line || "\u00A0"}</div>
+                    ))}
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-100 dark:from-slate-800 to-transparent" />
+                </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-muted/50 p-6">
-                  <span className="text-4xl font-bold text-muted-foreground/10">{poll.options.length}</span>
-                  <span className="text-sm text-muted-foreground/40">options to vote on</span>
+                  <span className="text-lg font-semibold text-muted-foreground/30">{poll.title}</span>
+                  <div className="flex gap-2">
+                    {poll.options.slice(0, 3).map((o: any, oi: number) => (
+                      <span key={oi} className="px-2 py-0.5 rounded-full bg-foreground/5 text-[10px] text-muted-foreground/50">{o.label}</span>
+                    ))}
+                  </div>
+                  <span className="text-xs text-muted-foreground/30 mt-1">{poll.options.length} options</span>
                 </div>
               )}
               <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
@@ -546,82 +625,201 @@ function ScrollSlideIn({ children, className = "" }: { children: ReactNode; clas
   );
 }
 
-/* ── Recent polls carousel — 3-4 visible, focused center ── */
-function RecentPollsCarousel({ polls, getThumbnail }: { polls: any[]; getThumbnail: (p: any) => string | null }) {
-  const [focus, setFocus] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const items = polls.slice(0, 8);
-  const prev = () => setFocus((f) => Math.max(0, f - 1));
-  const next = () => setFocus((f) => Math.min(items.length - 1, f + 1));
+/* ── Looping option thumbnail for cards with multiple options ── */
+function LoopingThumbnail({ options, className, getOptionMedia }: { options: any[]; className: string; getOptionMedia: (opt: any) => { thumb: string | null; type: string } }) {
+  const media = options.map(getOptionMedia);
+  const hasAnyVisual = media.some((m) => m.thumb);
+  const [idx, setIdx] = useState(0);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const card = el.children[focus] as HTMLElement;
-    if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [focus]);
+    if (media.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % media.length), 3000);
+    return () => clearInterval(t);
+  }, [media.length]);
+
+  // No visuals at all — show icon-based or text placeholder
+  if (!hasAnyVisual) {
+    const primaryType = media[0]?.type || "none";
+    const textOpt = options.find((o: any) => o.textContent);
+    if (textOpt) {
+      const ext = (textOpt.fileName || "").split('.').pop() || "md";
+      return (
+        <div className={`${className} flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-5 overflow-hidden relative`}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-2 py-0.5 rounded bg-foreground/10 text-[10px] font-mono font-bold uppercase tracking-wide">{ext}</span>
+            {textOpt.fileName && <span className="text-[10px] text-muted-foreground/50 truncate">{textOpt.fileName}</span>}
+          </div>
+          <div className="flex-1 text-[11px] leading-relaxed text-muted-foreground/60 font-mono overflow-hidden">
+            {(textOpt.textContent || "").slice(0, 400).split('\n').slice(0, 15).map((line: string, li: number) => (
+              <div key={li} className={line.startsWith('#') ? "font-semibold text-foreground/50 mt-1" : ""}>{line || "\u00A0"}</div>
+            ))}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-100 dark:from-slate-800 to-transparent" />
+        </div>
+      );
+    }
+    return (
+      <div className={`${className} flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-muted/50`}>
+        {primaryType === "audio" ? (
+          <div className="w-16 h-16 rounded-full bg-foreground/5 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-8 h-8 text-muted-foreground/30" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M9 18V5l12-2v13" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+            </svg>
+          </div>
+        ) : primaryType === "video" ? (
+          <div className="w-16 h-16 rounded-full bg-foreground/5 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-8 h-8 text-muted-foreground/30 ml-1" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        ) : (
+          <span className="text-lg font-semibold text-muted-foreground/25">{options[0]?.label}</span>
+        )}
+        <div className="flex gap-1.5">
+          {options.slice(0, 3).map((o: any, oi: number) => (
+            <span key={oi} className="px-2 py-0.5 rounded-full bg-foreground/5 text-[10px] text-muted-foreground/40">{o.label}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${className} relative`}>
+      {media.map((m, i) => (
+        <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}>
+          {m.thumb ? (
+            <img src={m.thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+              {m.type === "audio" ? (
+                <svg viewBox="0 0 24 24" className="w-12 h-12 text-muted-foreground/20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M9 18V5l12-2v13" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                </svg>
+              ) : m.type === "video" ? (
+                <svg viewBox="0 0 24 24" className="w-12 h-12 text-muted-foreground/20 ml-1" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              ) : m.type === "text" ? (
+                <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-5 overflow-hidden relative">
+                  <div className="text-[10px] leading-relaxed text-muted-foreground/50 font-mono overflow-hidden flex-1">
+                    {(options[i]?.textContent || "").slice(0, 200).split('\n').slice(0, 8).map((line: string, li: number) => (
+                      <div key={li} className={line.startsWith('#') ? "font-semibold text-foreground/40" : ""}>{line || "\u00A0"}</div>
+                    ))}
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-100 dark:from-slate-800 to-transparent" />
+                </div>
+              ) : null}
+            </div>
+          )}
+          {/* Play icon overlay for video/audio */}
+          {(m.type === "video" || m.type === "audio") && m.thumb && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-foreground/40 backdrop-blur-sm flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 text-background ml-0.5" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Recent designs — single stacked card, swap like pulling from a deck ── */
+function RecentPollsCarousel({ polls, getThumbnail, getOptionMedia }: { polls: any[]; getThumbnail: (p: any) => string | null; getOptionMedia: (opt: any) => { thumb: string | null; type: string } }) {
+  const [current, setCurrent] = useState(0);
+  const maxVisible = 5;
+  const hasMore = polls.length > maxVisible;
+  const items = polls.slice(0, maxVisible);
+  const prev = () => setCurrent((c) => (c > 0 ? c - 1 : items.length - 1));
+  const next = () => setCurrent((c) => (c < items.length - 1 ? c + 1 : 0));
 
   return (
     <>
-      <div className="flex items-center justify-between px-6 md:px-12 mb-8">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl md:text-2xl">Recent polls</h2>
-          <div className="flex gap-1.5">
-            <button onClick={prev} disabled={focus === 0}
-              className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition disabled:opacity-30" aria-label="Previous">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button onClick={next} disabled={focus >= items.length - 1}
-              className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition disabled:opacity-30" aria-label="Next">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+      <style>{`
+        @keyframes cardSwapIn { from { transform: scale(0.92) rotate(2deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+      `}</style>
+      {/* Header */}
+      <div className="flex items-center justify-center gap-3 mb-8">
+        <h2 className="text-xl md:text-2xl">Recent designs</h2>
+        <div className="flex gap-1.5">
+          <button onClick={prev}
+            className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Previous">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button onClick={next}
+            className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Next">
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
-        <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-          View all <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
       </div>
-      <div ref={scrollRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-6 md:px-[calc((100vw-1200px)/2+1.5rem)] pb-4"
-        style={{ scrollbarWidth: "none", scrollSnapType: "x mandatory" }}>
+      {/* Card fan — active centered, previous fan left, next fan right */}
+      <div className="relative mx-auto" style={{ width: "min(700px, 90vw)", height: "540px" }}>
         {items.map((poll, i) => {
-          const thumb = getThumbnail(poll);
-          const isFocused = i === focus;
+          const offset = i - current; // negative = left, positive = right
+
+          // Only render active + up to 2 on each side
+          if (Math.abs(offset) > 2) return null;
+
+          const isActive = offset === 0;
+          const absOff = Math.abs(offset);
+
+          // Fan layout: cards peek from left/right, tucked behind active
+          const side = offset < 0 ? -1 : 1; // -1 = left, 1 = right
+          const scale = isActive ? 1 : absOff === 1 ? 0.92 : 0.85;
+          const rotate = isActive ? 0 : side * (absOff === 1 ? 3 : 5);
+          const translateX = isActive ? 0 : side * (absOff === 1 ? 12 : 20); // percent — just peeking
+          const translateY = isActive ? 0 : absOff === 1 ? 8 : 14;
+          const opacity = isActive ? 1 : absOff === 1 ? 0.5 : 0.25;
+          const zIndex = isActive ? 30 : absOff === 1 ? 20 : 10;
+
           return (
-            <Link key={poll._id} to={`/poll/${poll.shareId}`}
-              onClick={(e) => { if (!isFocused) { e.preventDefault(); setFocus(i); } }}
-              className={`group snap-center shrink-0 rounded-2xl border bg-card overflow-hidden transition-all duration-500 ${
-                isFocused
-                  ? "w-[320px] md:w-[380px] border-primary/30 shadow-xl scale-100"
-                  : "w-[240px] md:w-[280px] border-border/30 shadow-sm scale-[0.92] opacity-60"
-              }`}>
-              <div className={`bg-muted relative overflow-hidden transition-all duration-500 ${isFocused ? "h-[340px] md:h-[400px]" : "h-[260px] md:h-[300px]"}`}>
-                {thumb ? (
-                  <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-muted/50">
-                    <span className="text-3xl font-bold text-muted-foreground/10">{poll.options.length}</span>
-                    <span className="text-xs text-muted-foreground/30">options</span>
-                  </div>
-                )}
-                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
-                  {poll.totalVotes || 0} votes
-                </div>
-                {isFocused && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-foreground/50 backdrop-blur-sm rounded-full px-3 py-1.5">
-                    {poll.options.slice(0, 5).map((_: any, j: number) => (
-                      <div key={j} className={`rounded-full ${j === 0 ? "w-4 h-1.5 bg-background" : "w-1.5 h-1.5 bg-background/40"}`} />
-                    ))}
-                  </div>
-                )}
+            <div
+              key={poll._id}
+              className={`absolute inset-0 rounded-2xl border bg-card overflow-hidden shadow-lg cursor-pointer transition-all duration-500 ease-out ${
+                isActive ? "border-primary/30 shadow-xl" : "border-border/20"
+              }`}
+              style={{
+                zIndex,
+                transform: `translateX(${translateX}%) translateY(${translateY}px) scale(${scale}) rotate(${rotate}deg)`,
+                opacity,
+                transformOrigin: isActive ? "center" : offset < 0 ? "right center" : "left center",
+              }}
+              onClick={() => {
+                if (isActive) window.location.href = `/poll/${poll.shareId}`;
+                else setCurrent(i);
+              }}
+            >
+              <LoopingThumbnail options={poll.options} getOptionMedia={getOptionMedia}
+                className="bg-muted overflow-hidden h-[380px] md:h-[420px] lg:h-[440px]" />
+              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
+                {poll.totalVotes || 0} votes
               </div>
               <div className="p-4">
-                <h3 className={`font-semibold truncate group-hover:text-primary transition-colors ${isFocused ? "text-lg" : "text-sm"}`}>{poll.title}</h3>
+                <h3 className="text-lg font-semibold truncate">{poll.title}</h3>
                 <p className="text-xs text-muted-foreground mt-1">{poll.options.length} options · by {poll.creatorName}</p>
               </div>
-            </Link>
+            </div>
           );
         })}
+      </div>
+      {/* Dots + View all */}
+      <div className="flex flex-col items-center gap-4 mt-6">
+        <div className="flex gap-2">
+          {items.map((_: any, i: number) => (
+            <button key={i} onClick={() => setCurrent(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${i === current ? "w-6 bg-foreground" : "w-2 bg-muted-foreground/30"}`}
+              aria-label={`Design ${i + 1}`} />
+          ))}
+        </div>
+        <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          {hasMore ? `View all ${polls.length} designs` : "View all"} <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </>
   );
@@ -672,12 +870,33 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
   const [showAuth, setShowAuth] = useState(false);
   const handleCta = () => user ? navigate("/create") : setShowAuth(true);
   const [introDone, setIntroDone] = useState(() => sessionStorage.getItem("pejla-intro") === "done");
+  const isReturning = useRef(sessionStorage.getItem("pejla-intro") === "done").current;
 
   useEffect(() => { fetchPolls(); }, [fetchPolls]);
 
   const getThumbnail = (poll: (typeof polls)[0]): string | null => {
-    for (const opt of poll.options) { if (opt.imageUrl) return opt.imageUrl; }
+    for (const opt of poll.options) {
+      if (opt.coverUrl) return opt.coverUrl;
+      if (opt.imageUrl) return opt.imageUrl;
+      if (opt.videoUrl && opt.videoUrl.includes("cloudinary")) {
+        return opt.videoUrl.replace(/\.[^.]+$/, ".jpg");
+      }
+    }
     return null;
+  };
+
+  // Get media type for a poll option (for play icon overlay)
+  const getOptionMedia = (opt: any): { thumb: string | null; type: "image" | "video" | "audio" | "embed" | "text" | "none" } => {
+    if (opt.coverUrl) return { thumb: opt.coverUrl, type: opt.videoUrl ? "video" : opt.audioUrl ? "audio" : "image" };
+    if (opt.imageUrl) return { thumb: opt.imageUrl, type: "image" };
+    if (opt.videoUrl) {
+      const thumb = opt.videoUrl.includes("cloudinary") ? opt.videoUrl.replace(/\.[^.]+$/, ".jpg") : null;
+      return { thumb, type: "video" };
+    }
+    if (opt.audioUrl) return { thumb: null, type: "audio" };
+    if (opt.embedUrl) return { thumb: null, type: "embed" };
+    if (opt.textContent) return { thumb: null, type: "text" };
+    return { thumb: null, type: "none" };
   };
 
   const publicPolls = polls.filter((p) => !p.visibility || p.visibility === "public");
@@ -687,34 +906,51 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
       <>
         <div className="min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden relative">
           <ClickRipple />
-          {/* Hero */}
+          {/* Hero — staggers in sequence after intro. Returning users see it all instantly. */}
           <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center relative overflow-hidden">
-            <FloatingCursors />
+            {/* Cursors */}
+            <StaggerIn show={introDone} delay={3800} skip={isReturning} className="absolute inset-0 pointer-events-none">
+              <FloatingCursors />
+            </StaggerIn>
+
             <HeroIntro introDone={introDone} onComplete={() => setIntroDone(true)} />
-            <div className={`transition-all duration-700 ease-out ${introDone ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+
+            {/* 1. Rotating words — start right after intro */}
+            <StaggerIn show={introDone} delay={0} skip={isReturning}>
               <h1 className="text-5xl md:text-7xl tracking-tight max-w-3xl leading-[1.15]">
-                <RotatingWord />
-                <br />without the noise
+                <RotatingWord started={introDone} skipAnim={isReturning} />
+                <br />
+                <WithoutTheNoise started={introDone} skipAnim={isReturning} />
               </h1>
+            </StaggerIn>
+
+            {/* 2. Description */}
+            <StaggerIn show={introDone} delay={3600} skip={isReturning}>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl mt-6 mx-auto leading-relaxed">
-                Pejla helps you share your work, collect votes,
-                and let the best design win.
+                Structured design feedback — share your designs,
+                collect votes, and see which idea wins.
               </p>
+            </StaggerIn>
+
+            {/* 3. CTAs */}
+            <StaggerIn show={introDone} delay={4200} skip={isReturning}>
               <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center items-center">
                 <Button onClick={handleCta} className="h-14 px-10 text-lg w-full sm:w-auto">
-                  {user ? "Share your work" : "Get feedback for free"} <ArrowRight className="ml-2 h-5 w-5" />
+                  Share your designs <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button variant="outline" className="h-14 px-10 text-lg w-full sm:w-auto" asChild>
                   <a href="#how-it-works">How it works</a>
                 </Button>
               </div>
-            </div>
+            </StaggerIn>
 
-            {/* Poll preview card — fades out on scroll, desktop only */}
+            {/* 4. Poll preview card — desktop only */}
             {publicPolls.length > 0 && (
-              <ScrollFadeOut className="hidden lg:flex absolute right-[-40px] xl:right-[-20px] top-1/2 -translate-y-1/2 z-10">
-                <HeroPollPreview polls={publicPolls} getThumbnail={getThumbnail} onCta={handleCta} />
-              </ScrollFadeOut>
+              <StaggerIn show={introDone} delay={4600} skip={isReturning} className="hidden lg:flex absolute right-[-40px] xl:right-[-20px] top-1/2 -translate-y-1/2 z-10">
+                <ScrollFadeOut>
+                  <HeroPollPreview polls={publicPolls} getThumbnail={getThumbnail} onCta={handleCta} />
+                </ScrollFadeOut>
+              </StaggerIn>
             )}
           </section>
 
@@ -728,9 +964,9 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           {/* Recent polls — full-width carousel, focus one at a time */}
           {publicPolls.length > 0 && (
             <section className="border-t border-border/60 py-16 overflow-hidden">
-              <ScrollSlideIn>
-                <RecentPollsCarousel polls={publicPolls} getThumbnail={getThumbnail} />
-              </ScrollSlideIn>
+              <FadeIn>
+                <RecentPollsCarousel polls={publicPolls} getThumbnail={getThumbnail} getOptionMedia={getOptionMedia} />
+              </FadeIn>
             </section>
           )}
 
@@ -739,10 +975,10 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             <FadeIn>
               <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Ready to pejla?</h2>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Free forever. Get your first feedback in 30 seconds.
+                Free forever. Get your first design feedback in 30 seconds.
               </p>
               <Button size="lg" onClick={handleCta}>
-                Share your work <ArrowRight className="ml-2 h-4 w-4" />
+                Share your designs <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <div className="mt-4">
                 <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -762,7 +998,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 1</span>
                     <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Share your options</h2>
                     <p className="text-muted-foreground leading-relaxed">
-                      Upload images, video, or audio. Paste a Figma, YouTube, or CodePen link.
+                      Upload designs, animations, sound clips, or any file. Paste a Figma, YouTube, or CodePen link.
                       Compare iterations side by side — v1 vs v2 vs v3.
                       Set visibility to public, unlisted, or private.
                     </p>

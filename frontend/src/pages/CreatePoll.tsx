@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight, Check, Clipboard, ChevronDown, X } from "lucide-react";
+import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight, Check, Clipboard, ChevronDown, X, Type } from "lucide-react";
 import { Progress } from "../components/ui/progress";
 import { toEmbedUrl } from "../utils/embedUrl";
 import { toast } from "sonner";
@@ -39,8 +39,8 @@ const CreatePoll = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [options, setOptions] = useState([
-    { label: "Option 1", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" },
-    { label: "Option 2", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" },
+    { label: "Option 1", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "", textContent: "", coverUrl: "" },
+    { label: "Option 2", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "", textContent: "", coverUrl: "" },
   ]);
   const [allowAnonymousVotes, setAllowAnonymousVotes] = useState(false);
   const [allowRemix, setAllowRemix] = useState(true);
@@ -76,6 +76,8 @@ const CreatePoll = () => {
               embedUrl: opt.embedUrl || "",
               fileUrl: opt.fileUrl || "",
               fileName: opt.fileName || "",
+              textContent: opt.textContent || "",
+              coverUrl: opt.coverUrl || "",
             }))
           );
         }
@@ -113,13 +115,35 @@ const CreatePoll = () => {
   const addOption = () => {
     setOptions((prev) => {
       const n = prev.length + 1;
-      const updated = [...prev, { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" }];
+      const updated = [...prev, { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "", textContent: "", coverUrl: "" }];
       optionsRef.current = updated;
       return updated;
     });
     setTimeout(() => {
       scrollRef.current?.scrollTo({ left: scrollRef.current.scrollWidth, behavior: "smooth" });
     }, 50);
+  };
+
+  const handleCoverUpload = async (index: number, file: File) => {
+    const key = index + 1000;
+    setUploading((prev) => new Set(prev).add(key));
+    setUploadProgress((prev) => new Map(prev).set(key, 0));
+
+    const { promise, abort } = pollApi.uploadWithProgress(file, ({ percent }) => {
+      setUploadProgress((prev) => new Map(prev).set(key, percent));
+    });
+    abortMapRef.current.set(key, abort);
+
+    try {
+      const data = await promise;
+      updateOption(index, { coverUrl: data.url || data.imageUrl });
+    } catch (err: any) {
+      if (err?.message !== "Upload cancelled") toast("Cover upload failed");
+    } finally {
+      abortMapRef.current.delete(key);
+      setUploading((prev) => { const next = new Set(prev); next.delete(key); return next; });
+      setUploadProgress((prev) => { const next = new Map(prev); next.delete(key); return next; });
+    }
   };
 
   const removeOption = (index: number) => {
@@ -134,7 +158,30 @@ const CreatePoll = () => {
   // Track which option slots are claimed (uploading) so rapid pastes don't collide
   const claimedRef = useRef<Set<number>>(new Set());
 
+  const TEXT_EXTS = [".md", ".txt", ".csv"];
+  const isTextFileLocal = (name: string) => TEXT_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
+
   const handleFileUpload = async (index: number, file: File) => {
+    // Text files: read locally, no upload needed
+    if (isTextFileLocal(file.name)) {
+      try {
+        const text = await file.text();
+        updateOption(index, { textContent: text, fileName: file.name });
+        // Auto-set label from filename if still default
+        setOptions((prev) => {
+          if (prev[index]?.label.startsWith("Option ")) {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], label: file.name.replace(/\.[^.]+$/, "") };
+            return updated;
+          }
+          return prev;
+        });
+      } catch {
+        toast("Could not read file");
+      }
+      return;
+    }
+
     claimedRef.current.add(index);
     setUploading((prev) => new Set(prev).add(index));
     setUploadProgress((prev) => new Map(prev).set(index, 0));
@@ -190,7 +237,7 @@ const CreatePoll = () => {
       if (emptyIdx >= 0) return emptyIdx;
       // All full — create a new option
       const n = opts.length + 1;
-      const newOpt = { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" };
+      const newOpt = { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "", textContent: "", coverUrl: "" };
       const updated = [...opts, newOpt];
       setOptions(updated);
       optionsRef.current = updated;
@@ -251,7 +298,7 @@ const CreatePoll = () => {
       const emptyIdx = opts.findIndex((o, idx) => isSlotEmpty(o, idx));
       if (emptyIdx >= 0) return emptyIdx;
       const n = opts.length + 1;
-      const newOpt = { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" };
+      const newOpt = { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "", textContent: "", coverUrl: "" };
       const updated = [...opts, newOpt];
       setOptions(updated);
       optionsRef.current = updated;
@@ -282,7 +329,7 @@ const CreatePoll = () => {
         options: options.map((opt) => ({
           label: opt.label, imageUrl: opt.imageUrl, videoUrl: opt.videoUrl,
           audioUrl: opt.audioUrl, externalUrl: "", embedUrl: opt.embedUrl,
-          fileUrl: opt.fileUrl, fileName: opt.fileName,
+          fileUrl: opt.fileUrl, fileName: opt.fileName, textContent: opt.textContent, coverUrl: opt.coverUrl,
         })),
         status: "published",
         visibility,
@@ -300,7 +347,7 @@ const CreatePoll = () => {
     }
   };
 
-  const hasMedia = (opt: typeof options[0]) => opt.imageUrl || opt.videoUrl || opt.audioUrl || opt.fileUrl;
+  const hasMedia = (opt: typeof options[0]) => opt.imageUrl || opt.videoUrl || opt.audioUrl || opt.fileUrl || opt.textContent;
   const filledOptions = options.filter((o) => o.label.trim());
   const canNextFromStep0 = filledOptions.length >= 2;
   const canNextFromStep1 = true; // title is optional, auto-filled if empty
@@ -388,35 +435,164 @@ const CreatePoll = () => {
                           <img src={opt.imageUrl} alt={opt.label} className="w-full h-48 object-cover" />
                         )}
                         {opt.videoUrl && (
-                          <video src={opt.videoUrl} controls className="w-full h-48 bg-black" />
+                          <div className="relative">
+                            {opt.coverUrl ? (
+                              <div className="relative">
+                                <img src={opt.coverUrl} alt="Cover" className="w-full h-48 object-cover" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                  <span className="h-10 w-10 rounded-full bg-white/90 flex items-center justify-center text-black text-lg">▶</span>
+                                </div>
+                                <button type="button" onClick={() => updateOption(i, { coverUrl: "" })}
+                                  className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 text-white text-[10px]">Remove cover</button>
+                              </div>
+                            ) : (
+                              <video src={opt.videoUrl} controls className="w-full h-48 bg-black" />
+                            )}
+                            {!opt.coverUrl && (
+                              <label className="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/60 text-white text-[10px] cursor-pointer hover:bg-black/80 transition">
+                                {uploading.has(i + 1000) ? <><span>{uploadProgress.get(i + 1000) ?? 0}%</span><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); const a = abortMapRef.current.get(i + 1000); if (a) a(); }} className="ml-1 underline">cancel</span></> : "+ Add cover"}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                  const f = e.target.files?.[0]; if (f) handleCoverUpload(i, f);
+                                }} />
+                              </label>
+                            )}
+                          </div>
                         )}
                         {opt.audioUrl && (
-                          <div className="p-4 h-48 flex flex-col items-center justify-center gap-2 bg-muted">
-                            <span className="text-2xl">🎵</span>
-                            <audio src={opt.audioUrl} controls className="w-full" />
+                          <div className="relative">
+                            {opt.coverUrl ? (
+                              <div className="relative h-48">
+                                <img src={opt.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-8">
+                                  <audio src={opt.audioUrl} controls className="w-full" />
+                                </div>
+                                <button type="button" onClick={() => updateOption(i, { coverUrl: "" })}
+                                  className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/60 text-white text-[10px]">Remove cover</button>
+                              </div>
+                            ) : (
+                              <div className="p-4 h-48 flex flex-col items-center justify-center gap-2 bg-muted">
+                                <span className="text-2xl">🎵</span>
+                                <audio src={opt.audioUrl} controls className="w-full" />
+                                <label className="px-2 py-1 rounded bg-foreground/10 text-[10px] cursor-pointer hover:bg-foreground/20 transition text-muted-foreground">
+                                  {uploading.has(i + 1000) ? <><span>{uploadProgress.get(i + 1000) ?? 0}%</span><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); const a = abortMapRef.current.get(i + 1000); if (a) a(); }} className="ml-1 underline">cancel</span></> : "+ Add cover"}
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                    const f = e.target.files?.[0]; if (f) handleCoverUpload(i, f);
+                                  }} />
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {opt.textContent && (
+                          <div className="relative">
+                            {opt.coverUrl ? (
+                              <div className="relative">
+                                <img src={opt.coverUrl} alt="Cover" className="w-full h-48 object-cover" />
+                                <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-mono font-bold uppercase tracking-wide">
+                                    {(opt.fileName || "").split('.').pop() || "md"}
+                                  </span>
+                                </div>
+                                <button type="button" onClick={() => updateOption(i, { coverUrl: "" })}
+                                  className="absolute top-2 right-8 px-2 py-0.5 rounded bg-black/60 text-white text-[10px]">Remove cover</button>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/40 bg-muted/30">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="px-1.5 py-0.5 rounded bg-foreground/10 text-[10px] font-mono font-bold uppercase tracking-wide">
+                                      {(opt.fileName || "").split('.').pop() || "md"}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground truncate">{opt.fileName}</span>
+                                  </div>
+                                  <label className="px-2 py-0.5 rounded bg-foreground/10 text-[10px] cursor-pointer hover:bg-foreground/20 transition text-muted-foreground">
+                                    {uploading.has(i + 1000) ? <><span>{uploadProgress.get(i + 1000) ?? 0}%</span><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); const a = abortMapRef.current.get(i + 1000); if (a) a(); }} className="ml-1 underline">cancel</span></> : "+ Cover"}
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                      const f = e.target.files?.[0]; if (f) handleCoverUpload(i, f);
+                                    }} />
+                                  </label>
+                                </div>
+                              </>
+                            )}
+                            {!opt.coverUrl && (
+                              <textarea
+                                value={opt.textContent}
+                                onChange={(e) => updateOption(i, { textContent: e.target.value })}
+                                className="w-full h-56 p-3 text-sm font-mono bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                placeholder="Paste or edit content..."
+                              />
+                            )}
                           </div>
                         )}
                         {opt.fileUrl && (() => {
-                          if (isTextFile(opt.fileUrl, opt.fileName)) {
-                            return <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="h-48" />;
+                          const ext = (opt.fileName || opt.fileUrl).split('.').pop()?.toLowerCase() || "file";
+                          const isPdf = ext === "pdf";
+                          const isText = isTextFile(opt.fileUrl, opt.fileName);
+                          const needsCover = isText || isPdf || !["jpg","jpeg","png","gif","webp","avif","svg","mp4","webm","mov","mp3","wav","flac","aac","ogg","m4a"].includes(ext);
+
+                          if (opt.coverUrl && needsCover) {
+                            return (
+                              <div className="relative h-48">
+                                <img src={opt.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                                <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-mono font-bold uppercase tracking-wide">{ext}</span>
+                                  <span className="text-[10px] text-white/70 truncate max-w-[140px]">{opt.fileName}</span>
+                                </div>
+                                <button type="button" onClick={() => updateOption(i, { coverUrl: "" })}
+                                  className="absolute top-2 right-8 px-2 py-0.5 rounded bg-black/60 text-white text-[10px]">Remove cover</button>
+                              </div>
+                            );
                           }
-                          const isPdf = opt.fileUrl.toLowerCase().includes('.pdf');
-                          return isPdf ? (
-                            <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-48 border-0" />
-                          ) : (
+
+                          if (isText) {
+                            return (
+                              <div className="relative h-64 overflow-hidden">
+                                <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="h-full" />
+                                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-card to-transparent" />
+                                <div className="absolute top-2 left-3 flex items-center gap-1.5">
+                                  <span className="inline-block px-1.5 py-0.5 rounded bg-foreground/10 text-[10px] font-mono font-bold uppercase tracking-wide">{ext}</span>
+                                  <span className="text-[10px] text-muted-foreground truncate max-w-[140px]">{opt.fileName}</span>
+                                </div>
+                                <label className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-foreground/10 text-[10px] cursor-pointer hover:bg-foreground/20 transition text-muted-foreground">
+                                  {uploading.has(i + 1000) ? <><span>{uploadProgress.get(i + 1000) ?? 0}%</span><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); const a = abortMapRef.current.get(i + 1000); if (a) a(); }} className="ml-1 underline">cancel</span></> : "+ Cover"}
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                    const f = e.target.files?.[0]; if (f) handleCoverUpload(i, f);
+                                  }} />
+                                </label>
+                              </div>
+                            );
+                          }
+                          if (isPdf) {
+                            return (
+                              <div className="relative h-64">
+                                <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-full border-0" />
+                                <label className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 text-white text-[10px] cursor-pointer hover:bg-black/80 transition">
+                                  {uploading.has(i + 1000) ? <><span>{uploadProgress.get(i + 1000) ?? 0}%</span><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); const a = abortMapRef.current.get(i + 1000); if (a) a(); }} className="ml-1 underline">cancel</span></> : "+ Cover"}
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                    const f = e.target.files?.[0]; if (f) handleCoverUpload(i, f);
+                                  }} />
+                                </label>
+                              </div>
+                            );
+                          }
+                          return (
                             <div className="p-4 h-48 flex flex-col items-center justify-center gap-2">
-                              <span className="inline-block px-2 py-1 rounded bg-muted-foreground/10 text-xs font-mono font-bold uppercase tracking-wide">
-                                {(opt.fileName || opt.fileUrl).split('.').pop()?.slice(0, 6) || "file"}
-                              </span>
+                              <span className="inline-block px-2 py-1 rounded bg-muted-foreground/10 text-xs font-mono font-bold uppercase tracking-wide">{ext.slice(0, 6)}</span>
                               <p className="text-sm font-medium truncate max-w-full">{opt.fileName || "File"}</p>
                               <a href={opt.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">Open file</a>
+                              <label className="px-2 py-0.5 rounded bg-foreground/10 text-[10px] cursor-pointer hover:bg-foreground/20 transition text-muted-foreground">
+                                {uploading.has(i + 1000) ? <><span>{uploadProgress.get(i + 1000) ?? 0}%</span><span onClick={(e) => { e.preventDefault(); e.stopPropagation(); const a = abortMapRef.current.get(i + 1000); if (a) a(); }} className="ml-1 underline">cancel</span></> : "+ Cover"}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                  const f = e.target.files?.[0]; if (f) handleCoverUpload(i, f);
+                                }} />
+                              </label>
                             </div>
                           );
                         })()}
                         <Button type="button" variant="destructive" size="sm"
                           className="absolute top-2 right-2"
                           onClick={() => {
-                            updateOption(i, { imageUrl: "", videoUrl: "", audioUrl: "", fileUrl: "", fileName: "" });
+                            updateOption(i, { imageUrl: "", videoUrl: "", audioUrl: "", fileUrl: "", fileName: "", textContent: "", coverUrl: "" });
                           }}>
                           Remove
                         </Button>
@@ -455,6 +631,13 @@ const CreatePoll = () => {
                             <span className="text-xs text-muted-foreground/60 mt-1 flex items-center gap-1">
                               <Clipboard className="h-3 w-3" /> Cmd+V / Ctrl+V
                             </span>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateOption(i, { textContent: " ", fileName: "text.md" }); }}
+                              className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-foreground/5 hover:bg-foreground/10 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition"
+                            >
+                              <Type className="h-3 w-3" /> Write text
+                            </button>
                           </>
                         )}
                         <input type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.md,.txt,.csv,.sketch,.fig,.zip,.ppt,.pptx,.xls,.xlsx" className="hidden" id={`file-${i}`}

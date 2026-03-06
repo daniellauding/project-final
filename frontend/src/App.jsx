@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { Toaster } from "./components/ui/sonner";
@@ -18,6 +19,11 @@ const AppRoutes = () => {
   const location = useLocation();
   const bgLocation = location.state?.backgroundLocation;
 
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
     <>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded">
@@ -30,6 +36,7 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create/:step?" element={<CreatePoll />} />
           <Route path="/poll/:shareId" element={<VotePoll />} />
+          <Route path="/poll/:shareId/option/:optionNum" element={<VotePoll />} />
           <Route path="/poll/:shareId/results" element={<Results />} />
           <Route path="/poll/:shareId/edit" element={<EditPoll />} />
           <Route path="/profile" element={<Profile />} />
@@ -51,6 +58,11 @@ const AppRoutes = () => {
 };
 
 export const App = () => {
+  // Prevent browser from restoring scroll on navigation
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+
   return (
     <ThemeProvider>
     <BrowserRouter>

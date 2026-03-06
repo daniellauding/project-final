@@ -35,6 +35,14 @@ const optionSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  textContent: {
+    type: String,
+    default: ""
+  },
+  coverUrl: {
+    type: String,
+    default: ""
+  },
   embedType: {
     type: String,
     enum: ["none", "figma", "lovable", "codepen", "generic"],

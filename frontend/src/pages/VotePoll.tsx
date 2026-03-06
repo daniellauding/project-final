@@ -15,6 +15,7 @@ import AuthModal from "../components/AuthModal";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { useOverlayVisibility } from "../hooks/useOverlayVisibility";
 import TextFilePreview, { isTextFile } from "../components/TextFilePreview";
+import ReactMarkdown from "react-markdown";
 
 interface PollOption {
   label: string;
@@ -24,6 +25,8 @@ interface PollOption {
   embedUrl?: string;
   fileUrl?: string;
   fileName?: string;
+  textContent?: string;
+  coverUrl?: string;
   voteCount: number;
   percentage: number;
   votes: string[];
@@ -104,24 +107,96 @@ function OptionMedia({ opt }: { opt: PollOption }) {
   }
   if (opt.videoUrl) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-black">
-        <video src={opt.videoUrl} controls className="max-w-full max-h-full" />
+      <div className="w-full h-full flex items-center justify-center bg-black relative">
+        {opt.coverUrl && (
+          <img src={opt.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm" />
+        )}
+        <video src={opt.videoUrl} controls className="max-w-full max-h-full relative z-10" />
       </div>
     );
   }
   if (opt.audioUrl) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-4">
-        <span className="text-3xl font-bold text-muted-foreground/30">{opt.label}</span>
-        <audio src={opt.audioUrl} controls className="w-80 max-w-[90%]" />
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4 relative">
+        {opt.coverUrl ? (
+          <>
+            <img src={opt.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40" />
+            <span className="text-3xl font-bold text-white/80 relative z-10 drop-shadow-lg">{opt.label}</span>
+            <audio src={opt.audioUrl} controls className="w-80 max-w-[90%] relative z-10" />
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-4">
+            <span className="text-3xl font-bold text-muted-foreground/30">{opt.label}</span>
+            <audio src={opt.audioUrl} controls className="w-80 max-w-[90%]" />
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (opt.textContent) {
+    const ext = (opt.fileName || "").split('.').pop()?.toLowerCase() || "md";
+    if (opt.coverUrl) {
+      return (
+        <div className="w-full h-full relative">
+          <img src={opt.coverUrl} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-6 left-6 right-6 z-10">
+            <span className="px-2 py-0.5 rounded bg-white/20 backdrop-blur-sm text-white text-[11px] font-mono font-bold uppercase tracking-wide">{ext}</span>
+            <p className="text-white text-lg font-semibold mt-2 drop-shadow-lg">{opt.label}</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="w-full h-full bg-muted/30 overflow-y-auto">
+        <div className="sticky top-0 z-10 flex items-center gap-2 px-6 py-2.5 bg-muted/80 backdrop-blur-sm border-b border-border/30">
+          <span className="px-2 py-0.5 rounded bg-foreground/10 text-[11px] font-mono font-bold uppercase tracking-wide">{ext}</span>
+          {opt.fileName && <span className="text-xs text-muted-foreground">{opt.fileName}</span>}
+        </div>
+        <div className="px-4 md:px-8 lg:px-16 py-8">
+          <div className="max-w-3xl mx-auto bg-white dark:bg-card rounded-lg shadow-sm border border-border/30 px-8 md:px-12 py-10">
+            {ext === "md" ? (
+              <div className="prose prose-neutral dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-h1:text-2xl prose-h1:mb-4 prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2 prose-p:leading-relaxed prose-p:text-[15px] prose-li:leading-relaxed prose-li:text-[15px] prose-ul:space-y-0.5 prose-ol:space-y-0.5 max-w-none">
+                <ReactMarkdown>{opt.textContent}</ReactMarkdown>
+              </div>
+            ) : (
+              <pre className="whitespace-pre-wrap text-sm leading-relaxed font-mono text-foreground/80">{opt.textContent}</pre>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
   if (opt.fileUrl) {
-    if (isTextFile(opt.fileUrl, opt.fileName)) {
-      return <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="w-full h-full bg-background" />;
+    const fileExt = (opt.fileName || opt.fileUrl).split('.').pop()?.toLowerCase() || "file";
+    const isText = isTextFile(opt.fileUrl, opt.fileName);
+    const isPdf = fileExt === "pdf";
+
+    if (opt.coverUrl && (isText || isPdf)) {
+      return (
+        <div className="w-full h-full relative">
+          <img src={opt.coverUrl} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-6 left-6 right-6 z-10">
+            <span className="px-2 py-0.5 rounded bg-white/20 backdrop-blur-sm text-white text-[11px] font-mono font-bold uppercase tracking-wide">{fileExt}</span>
+            <p className="text-white text-lg font-semibold mt-2 drop-shadow-lg">{opt.label}</p>
+          </div>
+        </div>
+      );
     }
-    const isPdf = opt.fileUrl.toLowerCase().includes('.pdf');
+
+    if (isText) {
+      return (
+        <div className="w-full h-full bg-background relative">
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-foreground/10 text-[11px] font-mono font-bold uppercase tracking-wide">{fileExt}</span>
+            {opt.fileName && <span className="text-xs text-muted-foreground">{opt.fileName}</span>}
+          </div>
+          <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="w-full h-full pt-10 bg-background" />
+        </div>
+      );
+    }
     if (isPdf) {
       return (
         <iframe src={opt.fileUrl} title={opt.label} className="w-full h-full border-0" />
@@ -208,7 +283,7 @@ function CommentContent({ text, imageUrl, onImageClick }: { text: string; imageU
 }
 
 const VotePoll = () => {
-  const { shareId } = useParams<{ shareId: string }>();
+  const { shareId, optionNum } = useParams<{ shareId: string; optionNum?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -218,6 +293,8 @@ const VotePoll = () => {
   const [votedIndex, setVotedIndex] = useState<number | null>(null);
   const [voting, setVoting] = useState(false);
   const [current, setCurrent] = useState(() => {
+    // Support both /poll/:id/option/N and ?option=N (legacy)
+    if (optionNum) return Math.max(0, parseInt(optionNum, 10) - 1);
     const params = new URLSearchParams(window.location.search);
     const opt = params.get("option");
     return opt ? Math.max(0, parseInt(opt, 10) - 1) : 0;
@@ -294,6 +371,26 @@ const VotePoll = () => {
   useEffect(() => { fetchPoll(); }, [shareId]);
   useEffect(() => { if (poll) fetchComments(); }, [poll?._id]);
   useEffect(() => { if (panel === "comments" && poll) fetchComments(); }, [panel]);
+
+  // Stop all audio/video when switching slides + update URL
+  const carouselRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    el.querySelectorAll("audio, video").forEach((m) => {
+      const media = m as HTMLMediaElement;
+      if (!media.paused) { media.pause(); }
+    });
+  }, [current]);
+
+  // Keep URL in sync with current option
+  useEffect(() => {
+    if (!poll || poll.results.length <= 1) return;
+    const path = `/poll/${shareId}/option/${current + 1}`;
+    if (window.location.pathname !== path) {
+      window.history.replaceState(null, "", path);
+    }
+  }, [current, poll, shareId]);
 
   const handleVote = async (optionIndex: number) => {
     if (voting) return;
@@ -453,7 +550,7 @@ const VotePoll = () => {
       onTouchEnd={handleTouchEnd}
     >
       {/* Carousel */}
-      <div className="h-full overflow-hidden">
+      <div ref={carouselRef} className="h-full overflow-hidden">
         {multiSlide ? (
           <div
             className="flex h-full transition-transform duration-300 ease-out"
@@ -560,7 +657,7 @@ const VotePoll = () => {
         <button
           onClick={() => {
             const base = `${window.location.origin}/poll/${poll.shareId}`;
-            const url = multiSlide ? `${base}?option=${current + 1}` : base;
+            const url = multiSlide ? `${base}/option/${current + 1}` : base;
             navigator.clipboard.writeText(url);
             toast(multiSlide ? `Link to Option ${current + 1} copied!` : "Link copied!");
           }}
