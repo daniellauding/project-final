@@ -317,6 +317,56 @@ function DecideIllustration() {
   );
 }
 
+/* ── Floating cursors ── */
+const cursorPath = "M4.5 2.1c-.2-.3-.6-.3-.8 0L.3 13.7c-.2.5.2 1 .7.8l4.1-1.6c.2-.1.4-.1.5 0l4.1 1.6c.5.2 1-.3.7-.8L7 2.1c-.1-.2-.3-.3-.5-.3h-2z";
+
+const cursors = [
+  { x: "12%", y: "18%", color: "#f9a8d4", delay: 0, scale: 1.1 },
+  { x: "82%", y: "14%", color: "#93c5fd", delay: 1.2, scale: 0.9 },
+  { x: "88%", y: "55%", color: "#86efac", delay: 2.4, scale: 1 },
+  { x: "8%",  y: "62%", color: "#c4b5fd", delay: 0.8, scale: 0.85 },
+  { x: "72%", y: "75%", color: "#fcd34d", delay: 1.8, scale: 0.75 },
+  { x: "25%", y: "78%", color: "#fca5a5", delay: 3, scale: 0.7 },
+];
+
+function FloatingCursors() {
+  return (
+    <>
+      <style>{`
+        @keyframes cursor-float {
+          0%, 100% { transform: translate(0, 0); }
+          25% { transform: translate(3px, -6px); }
+          50% { transform: translate(-2px, -10px); }
+          75% { transform: translate(4px, -4px); }
+        }
+        @keyframes cursor-click {
+          0%, 70%, 100% { transform: scale(1); opacity: 0.5; }
+          80% { transform: scale(0.8); opacity: 0.7; }
+          90% { transform: scale(1.1); opacity: 0.6; }
+        }
+      `}</style>
+      {cursors.map((c, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 12 16"
+          className="absolute pointer-events-none"
+          style={{
+            left: c.x,
+            top: c.y,
+            width: `${c.scale * 28}px`,
+            height: `${c.scale * 36}px`,
+            opacity: 0.45,
+            animation: `cursor-float ${5 + i * 0.7}s ease-in-out infinite, cursor-click ${3.6 + i * 0.4}s ease-in-out ${c.delay}s infinite`,
+            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.08))",
+          }}
+        >
+          <path d={cursorPath} fill={c.color} />
+        </svg>
+      ))}
+    </>
+  );
+}
+
 /* ── Steps ── */
 const steps = [
   { icon: ImagePlus, title: "Share", desc: "Upload images, Figma embeds, or video. Compare iterations side by side." },
@@ -345,7 +395,8 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
       <>
         <div className="min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
           {/* Hero */}
-          <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center">
+          <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center relative overflow-hidden">
+            <FloatingCursors />
             <HeroIntro introDone={introDone} onComplete={() => setIntroDone(true)} />
             <div className={`transition-all duration-700 ease-out ${introDone ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
               <h1 className="text-5xl md:text-7xl tracking-tight max-w-3xl leading-[1.15]">
