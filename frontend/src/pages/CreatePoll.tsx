@@ -58,6 +58,10 @@ const CreatePoll = () => {
   const activeCardRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingRemix, setLoadingRemix] = useState(!!remixFrom);
+  const [remixPollId, setRemixPollId] = useState("");
+  const claimedRef = useRef<Set<number>>(new Set());
+  const optionsRef = useRef(options);
+  const uploadRef = useRef<(index: number, file: File) => Promise<void>>(null as any);
 
   useEffect(() => {
     if (!remixFrom) return;
@@ -66,9 +70,11 @@ const CreatePoll = () => {
         const data = await pollApi.getByShareId(remixFrom);
         setTitle(`Remix: ${data.title}`);
         setDescription(data.description || "");
-        if (data.options) {
+        setRemixPollId(data._id);
+        const opts = data.results || data.options;
+        if (opts) {
           setOptions(
-            data.options.map((opt: any, i: number) => ({
+            opts.map((opt: any, i: number) => ({
               label: opt.label || `Option ${i + 1}`,
               imageUrl: opt.imageUrl || "",
               videoUrl: opt.videoUrl || "",
@@ -89,19 +95,6 @@ const CreatePoll = () => {
     };
     loadRemix();
   }, [remixFrom]);
-
-  if (!user) {
-    return (
-      <div className="container mx-auto p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Log in</h1>
-        <p className="text-muted-foreground">You need to log in to create a poll.</p>
-      </div>
-    );
-  }
-
-  if (loadingRemix) {
-    return <div className="flex items-center justify-center min-h-[60vh]">Loading remix...</div>;
-  }
 
   const updateOption = (index: number, fields: Record<string, string>) => {
     setOptions((prev) => {
@@ -154,9 +147,6 @@ const CreatePoll = () => {
       return updated;
     });
   };
-
-  // Track which option slots are claimed (uploading) so rapid pastes don't collide
-  const claimedRef = useRef<Set<number>>(new Set());
 
   const TEXT_EXTS = [".md", ".txt", ".csv"];
   const isTextFileLocal = (name: string) => TEXT_EXTS.some((ext) => name.toLowerCase().endsWith(ext));
@@ -213,10 +203,8 @@ const CreatePoll = () => {
     toast("Upload cancelled");
   };
 
-  // Refs so the global paste listener always sees latest state
-  const optionsRef = useRef(options);
+  // Keep refs in sync so global paste/drop listeners see latest state
   optionsRef.current = options;
-  const uploadRef = useRef(handleFileUpload);
   uploadRef.current = handleFileUpload;
   activeCardRef.current = activeCard;
 
@@ -324,22 +312,27 @@ const CreatePoll = () => {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const data = await pollApi.create({
-        title: autoTitle(), description,
-        options: options.map((opt) => ({
-          label: opt.label, imageUrl: opt.imageUrl, videoUrl: opt.videoUrl,
-          audioUrl: opt.audioUrl, externalUrl: "", embedUrl: opt.embedUrl,
-          fileUrl: opt.fileUrl, fileName: opt.fileName, textContent: opt.textContent, coverUrl: opt.coverUrl,
-        })),
-        status: "published",
-        visibility,
-        allowAnonymousVotes,
-        allowRemix,
-        showWinner,
-        ...(deadline ? { deadline } : {}),
-        ...(password ? { password } : {}),
-      });
-      if (data.success) navigate(`/poll/${data.poll.shareId}`);
+      const optPayload = options.map((opt) => ({
+        label: opt.label, imageUrl: opt.imageUrl, videoUrl: opt.videoUrl,
+        audioUrl: opt.audioUrl, externalUrl: "", embedUrl: opt.embedUrl,
+        fileUrl: opt.fileUrl, fileName: opt.fileName, textContent: opt.textContent, coverUrl: opt.coverUrl,
+      }));
+
+      let data;
+      if (remixPollId) {
+        data = await pollApi.remix(remixPollId, {
+          title: autoTitle(), description, options: optPayload,
+        });
+      } else {
+        data = await pollApi.create({
+          title: autoTitle(), description, options: optPayload,
+          status: "published", visibility, allowAnonymousVotes, allowRemix, showWinner,
+          ...(deadline ? { deadline } : {}),
+          ...(password ? { password } : {}),
+        });
+      }
+      const shareId = data.poll?.shareId || data.remix?.shareId;
+      if (shareId) navigate(`/poll/${shareId}`);
     } catch {
       toast("Failed to create poll");
     } finally {
@@ -349,6 +342,19 @@ const CreatePoll = () => {
 
   const hasMedia = (opt: typeof options[0]) => opt.imageUrl || opt.videoUrl || opt.audioUrl || opt.fileUrl || opt.textContent;
   const filledOptions = options.filter((o) => o.label.trim());
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Log in</h1>
+        <p className="text-muted-foreground">You need to log in to create a poll.</p>
+      </div>
+    );
+  }
+
+  if (loadingRemix) {
+    return <div className="flex items-center justify-center min-h-[60vh]">Loading remix...</div>;
+  }
   const canNextFromStep0 = filledOptions.length >= 2;
   const canNextFromStep1 = true; // title is optional, auto-filled if empty
   const canPublish = canNextFromStep0;

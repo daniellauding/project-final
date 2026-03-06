@@ -38,7 +38,7 @@ export default function NotificationBell() {
         headers: { Authorization: getToken() },
       });
       const data = await res.json();
-      setNotifications(Array.isArray(data) ? data : []);
+      setNotifications(data.notifications || []);
     } catch {}
   };
 

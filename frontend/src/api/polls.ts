@@ -140,7 +140,7 @@ update: async (pollId: string, data: { title?: string; description?: string; sta
     return res.json();
   },
 
-  remix: async (pollId: string, data: { title?: string; options?: { label: string }[] }) => {
+  remix: async (pollId: string, data: { title?: string; description?: string; options?: Record<string, any>[] }) => {
     const res = await fetch(`${API_URL}/polls/${pollId}/remix`, {
       method: "POST",
       headers: {

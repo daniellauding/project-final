@@ -479,7 +479,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
         {isCtaSlide ? (
           <div className="w-[340px] xl:w-[380px] h-[480px] xl:h-[520px] rounded-2xl border border-border/40 bg-card shadow-lg flex flex-col items-center justify-center text-center p-8 gap-4">
             <h3 className="text-xl font-semibold">Your turn</h3>
-            <p className="text-sm text-muted-foreground">Share designs, briefs, or tracks and see which idea wins.</p>
+            <p className="text-sm text-muted-foreground">Share designs, videos, briefs, or tracks and see which idea wins.</p>
             <button onClick={onCta} className="mt-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:brightness-110 transition flex items-center gap-2">
               Share your designs <ArrowRight className="h-4 w-4" />
             </button>
@@ -927,8 +927,8 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             {/* 2. Description */}
             <StaggerIn show={introDone} delay={3600} skip={isReturning}>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl mt-6 mx-auto leading-relaxed">
-                Share designs, briefs, or tracks — collect votes
-                and see which idea wins.
+                Share designs, videos, briefs, or tracks — collect
+                votes and see which idea wins.
               </p>
             </StaggerIn>
 

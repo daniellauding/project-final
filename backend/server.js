@@ -744,7 +744,8 @@ app.get("/notifications", authenticateUser, async (req, res) => {
   try {
     const notifications = await Notification.find({ user: req.user._id })
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)
+      .populate("poll", "shareId title");
     res.json({ success: true, notifications });
   } catch (error) {
     res.status(500).json({ success: false, error: "Could not fetch notifications", message: error.message });
