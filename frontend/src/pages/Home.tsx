@@ -434,11 +434,11 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                 Pejla helps you share your work, collect votes,
                 and let the best design win.
               </p>
-              <div className="flex gap-3 mt-10 justify-center">
-                <Button onClick={handleCta} className="h-14 px-10 text-lg">
+              <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center items-center">
+                <Button onClick={handleCta} className="h-14 px-10 text-lg w-full sm:w-auto">
                   {user ? "Share your work" : "Get feedback for free"} <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button variant="outline" className="h-14 px-10 text-lg" asChild>
+                <Button variant="outline" className="h-14 px-10 text-lg w-full sm:w-auto" asChild>
                   <a href="#how-it-works">How it works</a>
                 </Button>
               </div>
@@ -519,7 +519,14 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                       Set visibility to public, unlisted, or private.
                     </p>
                   </div>
-                  <CardStack />
+                  <img
+                    src="/how/01.png"
+                    srcSet="/how/01.png 960w, /how/01@2x.png 1920w"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    alt="Share your options — upload images, paste links, compare side by side"
+                    className="w-full max-w-sm mx-auto rounded-2xl border border-border/40 shadow-lg"
+                    loading="lazy"
+                  />
                 </div>
               </FadeIn>
             </div>
@@ -530,7 +537,14 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                 <FadeIn>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
                     <div className="order-2 md:order-1">
-                      <VotingBars />
+                  <img
+                    src="/how/02.png"
+                    srcSet="/how/02.png 960w, /how/02@2x.png 1920w"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    alt="Collect votes — one-tap voting on any device"
+                    className="w-full max-w-sm mx-auto rounded-2xl border border-border/40 shadow-lg"
+                    loading="lazy"
+                  />
                     </div>
                     <div className="order-1 md:order-2">
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 2</span>
