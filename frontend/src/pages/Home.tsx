@@ -358,7 +358,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
               </p>
               <div className="flex gap-3 mt-10 justify-center">
                 <Button onClick={handleCta} className="h-14 px-10 text-lg">
-                  {user ? "Create a poll" : "Start for free"} <ArrowRight className="ml-2 h-5 w-5" />
+                  {user ? "Share your work" : "Get feedback for free"} <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button variant="outline" className="h-14 px-10 text-lg" asChild>
                   <a href="#how-it-works">How it works</a>
@@ -413,10 +413,10 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             <FadeIn>
               <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Ready to pejla?</h2>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Free forever. Create your first poll in 30 seconds.
+                Free forever. Get your first feedback in 30 seconds.
               </p>
               <Button size="lg" onClick={handleCta}>
-                Create a poll <ArrowRight className="ml-2 h-4 w-4" />
+                Share your work <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <div className="mt-4">
                 <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -561,11 +561,10 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           </div>
           <h2 className="text-xl font-medium mb-2">No polls yet</h2>
           <p className="text-muted-foreground mb-6 leading-relaxed">
-            Create your first poll — upload images or Figma embeds,
-            add options, and share a link to start collecting votes.
+            Share your work, collect votes, and let the best design win.
           </p>
           <Button size="lg" asChild>
-            <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Create your first poll</Link>
+            <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Share your first design</Link>
           </Button>
         </div>
       )}
