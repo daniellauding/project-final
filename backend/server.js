@@ -414,6 +414,20 @@ app.post("/polls/:id/vote-anonymous", async (req, res) => {
 
     poll.options[optionIndex].votes.push(anonId);
     await poll.save();
+
+    // Notify poll creator
+    try {
+      await new Notification({
+        user: poll.creator,
+        type: "vote",
+        poll: poll._id,
+        fromUsername: "Someone",
+        message: "Someone voted on your poll"
+      }).save();
+    } catch (notifError) {
+      console.error("Notification error (anon vote):", notifError.message);
+    }
+
     res.json({ success: true, message: "Anonymous vote recorded!" });
   } catch (error) {
     res.status(500).json({ success: false, error: "Something went wrong — try again or reach out at hello@pejla.io" });
