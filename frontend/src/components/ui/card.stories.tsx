@@ -17,17 +17,17 @@ export const PollCard: Story = {
     <Card className="max-w-sm">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Vilken logo är bäst?</CardTitle>
+          <CardTitle>Which logo is best?</CardTitle>
           <Badge>published</Badge>
         </div>
-        <CardDescription>Vi ska välja ny logo</CardDescription>
+        <CardDescription>We need to pick a new logo</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">3 alternativ | 10 röster</p>
+        <p className="text-sm text-muted-foreground">3 options | 10 votes</p>
       </CardContent>
       <CardFooter className="flex gap-2">
-        <Button size="sm">Visa</Button>
-        <Button size="sm" variant="outline">Dela</Button>
+        <Button size="sm">View</Button>
+        <Button size="sm" variant="outline">Share</Button>
       </CardFooter>
     </Card>
   ),
@@ -37,8 +37,8 @@ export const EmptyState: Story = {
   render: () => (
     <Card className="max-w-sm text-center p-8">
       <CardContent>
-        <p className="text-muted-foreground">Inga polls ännu</p>
-        <Button className="mt-4">Skapa din första</Button>
+        <p className="text-muted-foreground">No polls yet</p>
+        <Button className="mt-4">Create your first</Button>
       </CardContent>
     </Card>
   ),

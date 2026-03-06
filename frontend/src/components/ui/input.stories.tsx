@@ -12,14 +12,14 @@ export default meta;
 type Story = StoryObj<typeof Input>;
 
 export const Default: Story = {
-  args: { placeholder: "Skriv något..." },
+  args: { placeholder: "Type something..." },
 };
 
 export const WithLabel: Story = {
   render: () => (
     <div className="space-y-2 max-w-sm">
       <Label htmlFor="email">Email</Label>
-      <Input id="email" type="email" placeholder="din@email.com" />
+      <Input id="email" type="email" placeholder="you@email.com" />
     </div>
   ),
 };
@@ -27,8 +27,8 @@ export const WithLabel: Story = {
 export const Password: Story = {
   render: () => (
     <div className="space-y-2 max-w-sm">
-      <Label htmlFor="pw">Lösenord</Label>
-      <Input id="pw" type="password" placeholder="Minst 8 tecken" />
+      <Label htmlFor="pw">Password</Label>
+      <Input id="pw" type="password" placeholder="At least 8 characters" />
     </div>
   ),
 };

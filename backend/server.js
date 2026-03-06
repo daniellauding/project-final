@@ -50,7 +50,7 @@ const authenticateUser = async (req, res, next) => {
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to DesignVote API",
+    message: "Welcome to Pejla API",
     endpoints: [
       { method: "POST", path: "/users", description: "Register" },
       { method: "POST", path: "/sessions", description: "Login" },
@@ -264,6 +264,8 @@ app.get("/polls/:shareId", async (req, res) => {
       imageUrl: opt.imageUrl,
       videoUrl: opt.videoUrl,
       audioUrl: opt.audioUrl,
+      fileUrl: opt.fileUrl,
+      fileName: opt.fileName,
       externalUrl: opt.externalUrl,
       embedUrl: opt.embedUrl,
       embedType: opt.embedType,
@@ -491,6 +493,10 @@ app.post("/polls/:id/remix", authenticateUser, async (req, res) => {
         label: opt.label,
         imageUrl: opt.imageUrl,
         externalUrl: opt.externalUrl,
+        videoUrl: opt.videoUrl,
+        audioUrl: opt.audioUrl,
+        fileUrl: opt.fileUrl,
+        fileName: opt.fileName,
         votes: []
       })),
       creator: req.user._id,
@@ -515,7 +521,8 @@ app.post("/upload", authenticateUser, upload.single("file"), (req, res) => {
     const mime = req.file.mimetype || "";
     let fileType = "image";
     if (mime.startsWith("video/")) fileType = "video";
-    if (mime.startsWith("audio/")) fileType = "audio";
+    else if (mime.startsWith("audio/")) fileType = "audio";
+    else if (!mime.startsWith("image/")) fileType = "file";
 
     res.json({
       success: true,
@@ -556,6 +563,25 @@ app.post("/polls/:id/comments", authenticateUser, async (req, res) => {
     res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not create comment", message: error.message });
+  }
+});
+
+app.patch("/comments/:id", authenticateUser, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ success: false, error: "Comment not found" });
+    }
+    if (comment.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+    const { text, imageUrl } = req.body;
+    if (text !== undefined) comment.text = text;
+    if (imageUrl !== undefined) comment.imageUrl = imageUrl;
+    const saved = await comment.save();
+    res.json(saved);
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not update comment", message: error.message });
   }
 });
 

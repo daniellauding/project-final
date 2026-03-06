@@ -27,6 +27,14 @@ const optionSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  fileUrl: {
+    type: String,
+    default: ""
+  },
+  fileName: {
+    type: String,
+    default: ""
+  },
   embedType: {
     type: String,
     enum: ["none", "figma", "lovable", "codepen", "generic"],

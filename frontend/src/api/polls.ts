@@ -22,9 +22,14 @@ export const pollApi = {
   create: async (pollData: {
     title: string;
     description: string;
-    options: { label: string; imageUrl?: string; videoUrl?: string; audioUrl?: string; externalUrl?: string; embedUrl?: string }[];
+    options: { label: string; imageUrl?: string; videoUrl?: string; audioUrl?: string; externalUrl?: string; embedUrl?: string; fileUrl?: string; fileName?: string }[];
     status: string;
+    visibility?: string;
     allowAnonymousVotes?: boolean;
+    allowRemix?: boolean;
+    showWinner?: boolean;
+    deadline?: string;
+    password?: string;
   }) => {
     const res = await fetch(`${API_URL}/polls`, {
       method: "POST",
@@ -126,6 +131,15 @@ update: async (pollId: string, data: { title?: string; description?: string; sta
         "Content-Type": "application/json",
         Authorization: getToken(),
       },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  editComment: async (commentId: string, data: { text?: string; imageUrl?: string }) => {
+    const res = await fetch(`${API_URL}/comments/${commentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: getToken() },
       body: JSON.stringify(data),
     });
     return res.json();

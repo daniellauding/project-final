@@ -1,0 +1,42 @@
+/* Apercu - Downloaded from belleduffner.com/playerpursuits */
+/* Original typeface by Colophon Foundry (https://www.colophon-foundry.org/typefaces/apercu) */
+
+@font-face {
+  font-family: "Apercu";
+  src: url("./apercu-regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apercu";
+  src: url("./apercu-medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apercu";
+  src: url("./apercu-bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apercu";
+  src: url("./apercu-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apercu";
+  src: url("./apercu-bold-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}

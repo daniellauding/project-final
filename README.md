@@ -1,12 +1,12 @@
-# DesignVote
+# Pejla
 
 A full-stack design feedback platform where users create polls with design alternatives, vote, comment, remix, and collaborate in teams.
 
-**Live:** [Frontend](https://designvote.netlify.app) | [Backend API](https://designvote-api.onrender.com)
+**Live:** [Frontend](https://pejla.io) | [Backend API](https://pejla-api.onrender.com)
 
 ## The Problem
 
-Designers need quick, structured feedback on their work. Existing tools are either too heavyweight (Figma comments) or too generic (Google Forms). DesignVote makes it simple: upload designs, share a link, get votes.
+Designers need quick, structured feedback on their work. Existing tools are either too heavyweight (Figma comments) or too generic (Google Forms). Pejla makes it simple: upload designs, share a link, get votes.
 
 I built this as my final project for the Technigo Fullstack JavaScript programme. It started with basic poll CRUD and grew into a platform with embeds, media upload, remix trees, teams, and anonymous voting.
 
@@ -159,5 +159,5 @@ npm run storybook
 
 ## View it live
 
-- **Frontend:** https://designvote.netlify.app
-- **Backend API:** https://designvote-api.onrender.com
+- **Frontend:** https://pejla.io
+- **Backend API:** https://pejla-api.onrender.com

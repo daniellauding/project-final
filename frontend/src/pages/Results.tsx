@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { pollApi } from "../api/polls";
+import { toast } from "sonner";
 import { Button } from "../components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -28,7 +29,7 @@ const Results = () => {
         const data = await pollApi.getByShareId(shareId!);
         setPoll(data);
       } catch {
-        // ignored
+        toast("Failed to load results");
       } finally {
         setLoading(false);
       }
@@ -38,14 +39,14 @@ const Results = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-8 text-center">Laddar...</div>
+      <div className="container mx-auto p-8 text-center">Loading...</div>
     );
   }
 
   if (!poll) {
     return (
       <div className="container mx-auto p-8 text-center">
-        Poll hittades inte
+        Poll not found
       </div>
     );
   }
@@ -57,13 +58,13 @@ const Results = () => {
       <Button variant="ghost" asChild className="mb-4">
         <Link to={`/poll/${poll.shareId}`}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Tillbaka till poll
+          Back to poll
         </Link>
       </Button>
 
       <h1 className="text-2xl font-bold mb-2">{poll.title}</h1>
       <p className="text-muted-foreground mb-6">
-        {poll.totalVotes} röster totalt
+        {poll.totalVotes} total votes
       </p>
 
       <div className="space-y-4">
@@ -78,7 +79,7 @@ const Results = () => {
                 }`}
               >
                 {opt.label}
-                {opt.voteCount === maxVotes && poll.totalVotes > 0 && " — Ledare!"}
+                {opt.voteCount === maxVotes && poll.totalVotes > 0 && " — Leader!"}
               </span>
               <span className="text-sm text-muted-foreground">
                 {opt.voteCount} ({opt.percentage}%)

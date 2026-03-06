@@ -1,33 +1,59 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { pollApi } from "../api/polls";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { Card, CardContent } from "../components/ui/card";
-import { PlusCircle, Trash2, Upload } from "lucide-react";
-import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
+import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight, Check, Clipboard, ChevronDown } from "lucide-react";
+import { toEmbedUrl } from "../utils/embedUrl";
+import { toast } from "sonner";
+
+const STEP_SLUGS = ["", "options", "publish"] as const;
+const STEP_LABELS = ["Question", "Options", "Publish"] as const;
+
+function slugToStep(slug: string | undefined): number {
+  if (!slug) return 0;
+  const idx = STEP_SLUGS.indexOf(slug as any);
+  return idx > 0 ? idx : 0;
+}
 
 const CreatePoll = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { step: stepParam } = useParams<{ step?: string }>();
   const [searchParams] = useSearchParams();
   const remixFrom = searchParams.get("remix");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const step = slugToStep(stepParam);
+  const remixQs = remixFrom ? `?remix=${remixFrom}` : "";
+
+  const goToStep = (s: number) => {
+    const slug = STEP_SLUGS[s];
+    navigate(slug ? `/create/${slug}${remixQs}` : `/create${remixQs}`, { replace: true });
+  };
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [options, setOptions] = useState([
-    { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" },
-    { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" },
+    { label: "Option 1", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" },
+    { label: "Option 2", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" },
   ]);
   const [allowAnonymousVotes, setAllowAnonymousVotes] = useState(false);
-  const [uploading, setUploading] = useState<number | null>(null);
+  const [allowRemix, setAllowRemix] = useState(true);
+  const [showWinner, setShowWinner] = useState(true);
+  const [deadline, setDeadline] = useState("");
+  const [visibility, setVisibility] = useState("public");
+  const [password, setPassword] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const [uploading, setUploading] = useState<Set<number>>(new Set());
+  const [activeCard, setActiveCard] = useState<number | null>(null);
+  const activeCardRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingRemix, setLoadingRemix] = useState(!!remixFrom);
 
-  // Pre-fill from remix source
   useEffect(() => {
     if (!remixFrom) return;
     const loadRemix = async () => {
@@ -37,15 +63,19 @@ const CreatePoll = () => {
         setDescription(data.description || "");
         if (data.options) {
           setOptions(
-            data.options.map((opt: any) => ({
-              label: opt.label || "",
+            data.options.map((opt: any, i: number) => ({
+              label: opt.label || `Option ${i + 1}`,
               imageUrl: opt.imageUrl || "",
+              videoUrl: opt.videoUrl || "",
+              audioUrl: opt.audioUrl || "",
               embedUrl: opt.embedUrl || "",
+              fileUrl: opt.fileUrl || "",
+              fileName: opt.fileName || "",
             }))
           );
         }
       } catch {
-        // ignored
+        toast("Failed to load remix");
       } finally {
         setLoadingRemix(false);
       }
@@ -56,257 +86,584 @@ const CreatePoll = () => {
   if (!user) {
     return (
       <div className="container mx-auto p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">Logga in</h1>
-        <p className="text-muted-foreground">Du behöver logga in för att skapa en poll.</p>
+        <h1 className="text-2xl font-bold mb-4">Log in</h1>
+        <p className="text-muted-foreground">You need to log in to create a poll.</p>
       </div>
     );
   }
 
   if (loadingRemix) {
-    return <div className="flex items-center justify-center min-h-screen">Laddar remix...</div>;
+    return <div className="flex items-center justify-center min-h-[60vh]">Loading remix...</div>;
   }
 
-  const updateOption = (index: number, field: string, value: string) => {
-    const updated = [...options];
-    updated[index] = { ...updated[index], [field]: value };
-    setOptions(updated);
+  const updateOption = (index: number, fields: Record<string, string>) => {
+    setOptions((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...fields };
+      optionsRef.current = updated;
+      return updated;
+    });
   };
 
   const addOption = () => {
-    setOptions([...options, { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" }]);
+    setOptions((prev) => {
+      const n = prev.length + 1;
+      const updated = [...prev, { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" }];
+      optionsRef.current = updated;
+      return updated;
+    });
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ left: scrollRef.current.scrollWidth, behavior: "smooth" });
+    }, 50);
   };
 
   const removeOption = (index: number) => {
-    if (options.length > 2) {
-      setOptions(options.filter((_, i) => i !== index));
-    }
+    setOptions((prev) => {
+      if (prev.length <= 2) return prev;
+      const updated = prev.filter((_, i) => i !== index);
+      optionsRef.current = updated;
+      return updated;
+    });
   };
+
+  // Track which option slots are claimed (uploading) so rapid pastes don't collide
+  const claimedRef = useRef<Set<number>>(new Set());
 
   const handleFileUpload = async (index: number, file: File) => {
-    setUploading(index);
+    claimedRef.current.add(index);
+    setUploading((prev) => new Set(prev).add(index));
     try {
       const data = await pollApi.upload(file);
-      if (data.fileType === "video") {
-        updateOption(index, "videoUrl", data.url);
-      } else if (data.fileType === "audio") {
-        updateOption(index, "audioUrl", data.url);
-      } else {
-        updateOption(index, "imageUrl", data.url || data.imageUrl);
-      }
+      if (data.fileType === "video") updateOption(index, { videoUrl: data.url });
+      else if (data.fileType === "audio") updateOption(index, { audioUrl: data.url });
+      else if (data.fileType === "file") updateOption(index, { fileUrl: data.url, fileName: file.name });
+      else updateOption(index, { imageUrl: data.url || data.imageUrl });
     } catch {
-      // ignored
+      toast("Upload failed");
     } finally {
-      setUploading(null);
+      claimedRef.current.delete(index);
+      setUploading((prev) => { const next = new Set(prev); next.delete(index); return next; });
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Refs so the global paste listener always sees latest state
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const uploadRef = useRef(handleFileUpload);
+  uploadRef.current = handleFileUpload;
+  activeCardRef.current = activeCard;
+
+  // Global paste: selected card → paste there; otherwise next empty; otherwise new card
+  useEffect(() => {
+    if (step !== 1) return;
+
+    const isSlotEmpty = (o: typeof options[0], idx: number) =>
+      !o.imageUrl && !o.videoUrl && !o.audioUrl && !o.embedUrl && !o.fileUrl && !claimedRef.current.has(idx);
+
+    const findTarget = (): number => {
+      // If a card is selected, always paste there (replace existing)
+      const active = activeCardRef.current;
+      if (active !== null && active < optionsRef.current.length) return active;
+      // Otherwise find first empty slot
+      const opts = optionsRef.current;
+      const emptyIdx = opts.findIndex((o, idx) => isSlotEmpty(o, idx));
+      if (emptyIdx >= 0) return emptyIdx;
+      // All full — create a new option
+      const n = opts.length + 1;
+      const newOpt = { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" };
+      const updated = [...opts, newOpt];
+      setOptions(updated);
+      optionsRef.current = updated;
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ left: scrollRef.current.scrollWidth, behavior: "smooth" });
+      }, 50);
+      return opts.length; // index of the new option
+    };
+
+    const onPaste = (e: ClipboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+
+          const targetIdx = findTarget();
+          uploadRef.current(targetIdx, file);
+          toast(`Pasted into Option ${targetIdx + 1}`);
+          return;
+        }
+      }
+
+      const text = e.clipboardData?.getData("text/plain")?.trim();
+      if (text && /^https?:\/\//.test(text)) {
+        e.preventDefault();
+        const targetIdx = findTarget();
+        const opts = optionsRef.current;
+        const updated = [...opts];
+        updated[targetIdx] = { ...updated[targetIdx], embedUrl: text };
+        setOptions(updated);
+        optionsRef.current = updated;
+        toast(`URL pasted into Option ${targetIdx + 1}`);
+      }
+    };
+
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [step]);
+
+  // Global drag-and-drop: route files to active/empty/new option (same logic as paste)
+  useEffect(() => {
+    if (step !== 1) return;
+
+    const isSlotEmpty = (o: typeof options[0], idx: number) =>
+      !o.imageUrl && !o.videoUrl && !o.audioUrl && !o.embedUrl && !o.fileUrl && !claimedRef.current.has(idx);
+
+    const findTarget = (): number => {
+      const active = activeCardRef.current;
+      if (active !== null && active < optionsRef.current.length) return active;
+      const opts = optionsRef.current;
+      const emptyIdx = opts.findIndex((o, idx) => isSlotEmpty(o, idx));
+      if (emptyIdx >= 0) return emptyIdx;
+      const n = opts.length + 1;
+      const newOpt = { label: `Option ${n}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" };
+      const updated = [...opts, newOpt];
+      setOptions(updated);
+      optionsRef.current = updated;
+      setTimeout(() => { scrollRef.current?.scrollTo({ left: scrollRef.current.scrollWidth, behavior: "smooth" }); }, 50);
+      return opts.length;
+    };
+
+    const onDragOver = (e: DragEvent) => { e.preventDefault(); };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      const targetIdx = findTarget();
+      uploadRef.current(targetIdx, file);
+      toast(`Dropped into Option ${targetIdx + 1}`);
+    };
+
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", onDrop);
+    return () => { document.removeEventListener("dragover", onDragOver); document.removeEventListener("drop", onDrop); };
+  }, [step]);
+
+  const handleSubmit = async () => {
     setSubmitting(true);
     try {
       const data = await pollApi.create({
-        title,
-        description,
+        title, description,
         options: options.map((opt) => ({
-          label: opt.label,
-          imageUrl: opt.imageUrl,
-          videoUrl: opt.videoUrl,
-          audioUrl: opt.audioUrl,
-          externalUrl: "",
-          embedUrl: opt.embedUrl,
+          label: opt.label, imageUrl: opt.imageUrl, videoUrl: opt.videoUrl,
+          audioUrl: opt.audioUrl, externalUrl: "", embedUrl: opt.embedUrl,
+          fileUrl: opt.fileUrl, fileName: opt.fileName,
         })),
         status: "published",
+        visibility,
         allowAnonymousVotes,
+        allowRemix,
+        showWinner,
+        ...(deadline ? { deadline } : {}),
+        ...(visibility === "private" && password ? { password } : {}),
       });
-      if (data.success) {
-        navigate(`/poll/${data.poll.shareId}`);
-      }
+      if (data.success) navigate(`/poll/${data.poll.shareId}`);
     } catch {
-      // ignored
+      toast("Failed to create poll");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const hasMedia = (opt: typeof options[0]) => opt.imageUrl || opt.videoUrl || opt.audioUrl || opt.fileUrl;
+  const filledOptions = options.filter((o) => o.label.trim());
+  const canNextFromStep0 = title.trim().length >= 3;
+  const canNextFromStep1 = filledOptions.length >= 2;
+  const canPublish = canNextFromStep0 && canNextFromStep1 && (visibility !== "private" || password.length >= 3);
+
   return (
-    <div className="container mx-auto p-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">
-        {remixFrom ? "Remixa poll" : "Skapa ny poll"}
-      </h1>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="title">Titel</Label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Vilken design är bäst?"
-            required
-            minLength={3}
-            maxLength={100}
-          />
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col">
+      {/* Step indicator */}
+      <div className="border-b border-border/60 bg-card/50">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-1 md:gap-2 max-w-lg mx-auto">
+            {STEP_LABELS.map((s, i) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  if (i === 0) goToStep(0);
+                  if (i === 1 && canNextFromStep0) goToStep(1);
+                  if (i === 2 && canNextFromStep0 && canNextFromStep1) goToStep(2);
+                }}
+                className="flex items-center gap-2 flex-1 group"
+              >
+                <span className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-colors ${
+                  i <= step
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                </span>
+                <span className={`text-sm hidden md:block transition-colors ${
+                  i === step ? "font-medium text-foreground" : "text-muted-foreground"
+                }`}>
+                  {s}
+                </span>
+                {i < STEP_LABELS.length - 1 && (
+                  <div className={`flex-1 h-px ml-2 ${i < step ? "bg-foreground" : "bg-border"}`} />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="desc">Beskrivning (valfri)</Label>
-          <Textarea
-            id="desc"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Berätta vad du vill ha feedback på..."
-            maxLength={500}
-          />
-        </div>
+      {/* Step content */}
+      <div className="flex-1 flex flex-col">
+        {/* Step 0: Question */}
+        {step === 0 && (
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-2xl md:text-3xl tracking-tight">
+                  {remixFrom ? "Remix a poll" : "What are you deciding?"}
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Give your poll a clear question so voters know what to focus on.
+                </p>
+              </div>
 
-        <div className="space-y-4">
-          <Label>Alternativ (minst 2)</Label>
+              <div className="space-y-2">
+                <Input
+                  id="title" value={title} onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Which logo works best?"
+                  aria-label="Poll title"
+                  required minLength={3} maxLength={100}
+                  className="text-lg h-14 bg-card placeholder:text-foreground/25 rounded-xl"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter" && canNextFromStep0) { e.preventDefault(); goToStep(1); } }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Textarea
+                  id="desc" value={description} onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add context for voters (optional)"
+                  aria-label="Poll description"
+                  maxLength={500} rows={3}
+                  className="bg-card placeholder:text-foreground/25 rounded-xl"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
-          {options.map((opt, i) => (
-            <Card key={i}>
-              <CardContent className="pt-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground w-6">
-                    {i + 1}.
-                  </span>
-                  <Input
-                    value={opt.label}
-                    onChange={(e) => updateOption(i, "label", e.target.value)}
-                    placeholder={`Alternativ ${i + 1}`}
-                    required
-                  />
-                  {options.length > 2 && (
-                    <Button
+        {/* Step 1: Options — horizontal scroll */}
+        {step === 1 && (
+          <div className="flex-1 flex flex-col">
+            <div className="text-center py-6 px-4">
+              <h2 className="text-xl md:text-2xl tracking-tight">Add your options</h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                {filledOptions.length} of {options.length} filled · need at least 2
+                {activeCard !== null && (
+                  <span className="ml-1">· pasting into Option {activeCard + 1}</span>
+                )}
+              </p>
+            </div>
+
+            <div className="flex-1 flex items-center pb-4">
+              <div
+                ref={scrollRef}
+                className="w-full overflow-x-auto snap-x snap-proximity flex gap-4 px-8 md:px-12 lg:px-16 pb-4 scrollbar-hide"
+              >
+                {options.map((opt, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveCard(activeCard === i ? null : i)}
+                    className={`snap-start shrink-0 w-[75vw] sm:w-[300px] md:w-[320px] lg:w-[340px] rounded-2xl border-2 bg-card overflow-hidden flex flex-col cursor-pointer transition-colors ${
+                      activeCard === i
+                        ? "border-foreground ring-2 ring-foreground/20"
+                        : "border-border/60"
+                    }`}
+                  >
+                    {/* Media area */}
+                    {hasMedia(opt) ? (
+                      <div className="relative bg-muted">
+                        {opt.imageUrl && (
+                          <img src={opt.imageUrl} alt={opt.label} className="w-full h-48 object-cover" />
+                        )}
+                        {opt.videoUrl && (
+                          <video src={opt.videoUrl} controls className="w-full h-48 bg-black" />
+                        )}
+                        {opt.audioUrl && (
+                          <div className="p-4 h-48 flex items-center bg-muted"><audio src={opt.audioUrl} controls className="w-full" /></div>
+                        )}
+                        {opt.fileUrl && (() => {
+                          const isPdf = opt.fileUrl.toLowerCase().includes('.pdf');
+                          return isPdf ? (
+                            <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-48 border-0" />
+                          ) : (
+                            <div className="p-4 h-48 flex flex-col items-center justify-center gap-2">
+                              <span className="text-2xl">📄</span>
+                              <p className="text-sm font-medium truncate max-w-full">{opt.fileName || "File"}</p>
+                              <a href={opt.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">Open file</a>
+                            </div>
+                          );
+                        })()}
+                        <Button type="button" variant="destructive" size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => {
+                            updateOption(i, { imageUrl: "", videoUrl: "", audioUrl: "", fileUrl: "", fileName: "" });
+                          }}>
+                          Remove
+                        </Button>
+                      </div>
+                    ) : !opt.embedUrl ? (
+                      <label
+                        htmlFor={`file-${i}`}
+                        className={`flex flex-col items-center justify-center h-48 cursor-pointer transition-colors ${
+                          dragOver === i ? "bg-primary/10 border-primary" : "bg-muted/60 hover:bg-muted"
+                        }`}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(i); }}
+                        onDragEnter={(e) => { e.preventDefault(); setDragOver(i); }}
+                        onDragLeave={() => setDragOver(null)}
+                        onDrop={(e) => {
+                          e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                          const file = e.dataTransfer?.files?.[0];
+                          if (file) handleFileUpload(i, file);
+                        }}
+                      >
+                        {uploading.has(i) ? (
+                          <span className="text-sm text-muted-foreground">Uploading...</span>
+                        ) : (
+                          <>
+                            <ImagePlus className="h-8 w-8 text-muted-foreground/60 mb-2" />
+                            <span className="text-sm text-muted-foreground">{dragOver === i ? "Drop file here" : "Drop, click, or paste"}</span>
+                            <span className="text-xs text-muted-foreground/60 mt-1 flex items-center gap-1">
+                              <Clipboard className="h-3 w-3" /> Cmd+V / Ctrl+V
+                            </span>
+                          </>
+                        )}
+                        <input type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.md,.txt,.csv,.sketch,.fig,.zip,.ppt,.pptx,.xls,.xlsx" className="hidden" id={`file-${i}`}
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(i, f); }} />
+                      </label>
+                    ) : null}
+
+                    {/* Embed preview */}
+                    {opt.embedUrl && toEmbedUrl(opt.embedUrl) && (
+                      <iframe src={toEmbedUrl(opt.embedUrl)!} title={`Preview ${opt.label}`}
+                        className="w-full h-48 border-b border-border/40" allowFullScreen />
+                    )}
+
+                    {/* Fields */}
+                    <div className="p-4 space-y-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-medium text-muted-foreground/40 w-6 shrink-0">{i + 1}</span>
+                        <Input value={opt.label} onChange={(e) => updateOption(i, { label: e.target.value })}
+                          placeholder={`Option ${i + 1}`}
+                          aria-label={`Option ${i + 1} label`}
+                          className="flex-1 placeholder:text-foreground/25 h-11 text-base" />
+                      </div>
+                      <Input value={opt.embedUrl} onChange={(e) => updateOption(i, { embedUrl: e.target.value })}
+                        placeholder="Paste Figma, YouTube, or CodePen URL"
+                        aria-label={`Option ${i + 1} embed URL`}
+                        className="text-sm placeholder:text-foreground/25" />
+                    </div>
+
+                    {/* Remove */}
+                    {options.length > 2 && (
+                      <div className="px-4 pb-3">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeOption(i)}
+                          className="text-muted-foreground hover:text-destructive w-full">
+                          <Trash2 className="mr-1 h-3 w-3" /> Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Add option card */}
+                <button
+                  type="button"
+                  onClick={addOption}
+                  className="snap-start shrink-0 w-[75vw] sm:w-[300px] md:w-[320px] lg:w-[340px] rounded-2xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center gap-3 hover:border-foreground/30 hover:bg-card/50 transition-colors min-h-[280px]"
+                >
+                  <PlusCircle className="h-8 w-8 text-muted-foreground/40" />
+                  <span className="text-sm text-muted-foreground">Add option</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dots indicator */}
+            <div className="flex justify-center gap-1.5 pb-2">
+              {options.map((_, i) => (
+                <div key={i} className="h-1.5 w-1.5 rounded-full bg-foreground/20" />
+              ))}
+              <div className="h-1.5 w-1.5 rounded-full bg-foreground/10" />
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Settings + Publish */}
+        {step === 2 && (
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg space-y-6">
+              <div className="text-center mb-4">
+                <h2 className="text-2xl md:text-3xl tracking-tight">Almost there</h2>
+                <p className="text-muted-foreground mt-2 text-sm">
+                  {title} · {filledOptions.length} options
+                </p>
+              </div>
+
+              {/* Visibility */}
+              <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+                <p className="text-sm font-medium">Who can see this?</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: "public", icon: Eye, label: "Public", desc: "Visible to everyone" },
+                    { value: "unlisted", icon: EyeOff, label: "Unlisted", desc: "Only via link" },
+                    { value: "private", icon: Lock, label: "Private", desc: "Requires password" },
+                  ] as const).map((v) => (
+                    <button
+                      key={v.value}
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeOption(i)}
+                      onClick={() => {
+                        setVisibility(v.value);
+                        if (v.value !== "private") setPassword("");
+                      }}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl p-3 border transition-colors ${
+                        visibility === v.value
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border/60 hover:border-foreground/30"
+                      }`}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                      <v.icon className="h-4 w-4" />
+                      <span className="text-xs font-medium">{v.label}</span>
+                      <span className={`text-[10px] ${visibility === v.value ? "opacity-70" : "text-muted-foreground"}`}>{v.desc}</span>
+                    </button>
+                  ))}
                 </div>
 
-                {opt.imageUrl ? (
-                  <div className="relative">
-                    <img
-                      src={opt.imageUrl}
-                      alt={opt.label}
-                      className="w-full h-40 object-cover rounded"
+                {visibility === "private" && (
+                  <div className="space-y-1.5 pt-1">
+                    <label htmlFor="poll-pw" className="text-sm">Set a password</label>
+                    <Input
+                      id="poll-pw"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Min 3 characters"
+                      minLength={3}
+                      className="bg-background placeholder:text-foreground/25"
+                      autoFocus
                     />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => updateOption(i, "imageUrl", "")}
-                    >
-                      Ta bort
-                    </Button>
-                  </div>
-                ) : opt.videoUrl ? (
-                  <div className="relative">
-                    <video
-                      src={opt.videoUrl}
-                      controls
-                      className="w-full h-40 rounded"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => updateOption(i, "videoUrl", "")}
-                    >
-                      Ta bort
-                    </Button>
-                  </div>
-                ) : opt.audioUrl ? (
-                  <div className="relative">
-                    <audio src={opt.audioUrl} controls className="w-full" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="mt-1"
-                      onClick={() => updateOption(i, "audioUrl", "")}
-                    >
-                      Ta bort
-                    </Button>
-                  </div>
-                ) : (
-                  <div>
-                    <input
-                      type="file"
-                      accept="image/*,video/*,audio/*"
-                      capture="environment"
-                      className="hidden"
-                      id={`file-${i}`}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(i, file);
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        document.getElementById(`file-${i}`)?.click()
-                      }
-                      disabled={uploading === i}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {uploading === i ? "Laddar upp..." : "Ladda upp fil (valfri)"}
-                    </Button>
                   </div>
                 )}
 
-                <Input
-                  value={opt.embedUrl}
-                  onChange={(e) => updateOption(i, "embedUrl", e.target.value)}
-                  placeholder="Embed-URL (valfri, t.ex. Figma-länk)"
-                />
+                <label className="flex items-center justify-between cursor-pointer pt-2 border-t border-border/40">
+                  <span className="text-sm">Allow anonymous voting</span>
+                  <input type="checkbox" checked={allowAnonymousVotes}
+                    onChange={(e) => setAllowAnonymousVotes(e.target.checked)}
+                    className="rounded h-4 w-4" />
+                </label>
+              </div>
 
-                {opt.embedUrl && toEmbedUrl(opt.embedUrl) ? (
-                  <iframe
-                    src={toEmbedUrl(opt.embedUrl)!}
-                    title={`Preview ${opt.label}`}
-                    className="w-full h-48 rounded border"
-                    allowFullScreen
-                  />
-                ) : opt.embedUrl ? (
-                  <div className="flex items-center gap-2 p-3 rounded border bg-muted text-sm">
-                    <span className="truncate flex-1">{opt.embedUrl}</span>
-                    <a href={opt.embedUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline shrink-0">
-                      Öppna
-                    </a>
+              {/* Advanced settings */}
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+              >
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
+                Advanced
+              </button>
+
+              {showAdvanced && (
+                <div className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="poll-deadline" className="text-sm">Deadline</label>
+                    <Input
+                      id="poll-deadline"
+                      type="datetime-local"
+                      value={deadline}
+                      onChange={(e) => setDeadline(e.target.value)}
+                      className="bg-background"
+                    />
                   </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          ))}
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addOption}
-            className="w-full"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Lägg till alternativ
-          </Button>
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm">Show winner</span>
+                    <input type="checkbox" checked={showWinner}
+                      onChange={(e) => setShowWinner(e.target.checked)}
+                      className="rounded h-4 w-4" />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm">Allow remix</span>
+                    <input type="checkbox" checked={allowRemix}
+                      onChange={(e) => setAllowRemix(e.target.checked)}
+                      className="rounded h-4 w-4" />
+                  </label>
+                </div>
+              )}
+
+              {/* Publish button inline */}
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting || !canPublish}
+                size="lg"
+                className="w-full h-12 text-base"
+              >
+                {submitting ? "Publishing..." : remixFrom ? "Publish remix" : "Publish poll"}
+              </Button>
+              {!canPublish && (
+                <p className="text-xs text-destructive text-center">
+                  {!canNextFromStep0
+                    ? "Go back and add a title (min 3 characters)."
+                    : !canNextFromStep1
+                    ? "Go back and fill at least 2 option labels."
+                    : "Set a password (min 3 characters) for private polls."}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom navigation — sticky so it's always visible */}
+      <div className="sticky bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between max-w-lg">
+          {step > 0 ? (
+            <Button variant="ghost" onClick={() => goToStep(step - 1)}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          {step < 2 ? (
+            <Button
+              onClick={() => goToStep(step + 1)}
+              disabled={step === 0 ? !canNextFromStep0 : !canNextFromStep1}
+            >
+              Next <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || !canPublish}
+              size="lg"
+            >
+              {submitting ? "Publishing..." : remixFrom ? "Publish remix" : "Publish poll"}
+            </Button>
+          )}
         </div>
-
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" checked={allowAnonymousVotes} onChange={(e) => setAllowAnonymousVotes(e.target.checked)} className="rounded" />
-          <span className="text-sm">Tillåt anonym röstning (utan inloggning)</span>
-        </label>
-
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Skapar..." : remixFrom ? "Publicera remix" : "Publicera poll"}
-        </Button>
-      </form>
+      </div>
     </div>
   );
 };

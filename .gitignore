@@ -13,3 +13,11 @@ yarn-debug.log*
 yarn-error.log*
 
 package-lock.json
+
+# Build output
+frontend/dist
+
+# Presentation files
+*.pptx
+make_pptx.py
+presentation.html

@@ -25,4 +25,13 @@ export const authApi = {
     });
     return res.json();
   },
+
+  updateProfile: async (token: string, data: { username?: string; avatarUrl?: string }) => {
+    const res = await fetch(`${API_URL}/users/me`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: token },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
 };

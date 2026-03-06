@@ -12,7 +12,7 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const Default: Story = {
-  args: { children: "Klicka här" },
+  args: { children: "Click here" },
 };
 
 export const Outline: Story = {
@@ -20,15 +20,15 @@ export const Outline: Story = {
 };
 
 export const Destructive: Story = {
-  args: { variant: "destructive", children: "Ta bort" },
+  args: { variant: "destructive", children: "Delete" },
 };
 
 export const WithIcon: Story = {
   render: () => (
     <div className="flex gap-2">
-      <Button><Vote className="mr-2 h-4 w-4" />Rösta</Button>
-      <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />Ny poll</Button>
-      <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Ta bort</Button>
+      <Button><Vote className="mr-2 h-4 w-4" />Vote</Button>
+      <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New poll</Button>
+      <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
     </div>
   ),
 };
@@ -36,9 +36,9 @@ export const WithIcon: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex items-center gap-2">
-      <Button size="sm">Liten</Button>
-      <Button size="default">Standard</Button>
-      <Button size="lg">Stor</Button>
+      <Button size="sm">Small</Button>
+      <Button size="default">Default</Button>
+      <Button size="lg">Large</Button>
     </div>
   ),
 };

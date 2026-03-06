@@ -1,0 +1,27 @@
+/* Exposure Trial - Downloaded from belleduffner.com/playerpursuits */
+/* Original typeface by Federico Parra Barrios (205.tf) */
+/* NOTE: These are TRIAL versions - purchase full license at https://www.205.tf/exposure */
+
+@font-face {
+  font-family: "Exposure Trial";
+  src: url("./exposure-trial-minus10.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Exposure Trial Light";
+  src: url("./exposure-trial-minus20.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Exposure Trial";
+  src: url("./exposure-italic-trial-minus20.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+}

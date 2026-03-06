@@ -51,12 +51,12 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isLogin ? "Logga in" : "Skapa konto"}</DialogTitle>
+          <DialogTitle>{isLogin ? "Log in" : "Create account"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div className="space-y-2">
-              <Label htmlFor="username">Användarnamn</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 value={username}
@@ -76,7 +76,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Lösenord</Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -88,14 +88,14 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Vänta..." : isLogin ? "Logga in" : "Skapa konto"}
+            {loading ? "Wait..." : isLogin ? "Log in" : "Create account"}
           </Button>
           <button
             type="button"
             className="text-sm text-muted-foreground underline w-full text-center"
             onClick={() => { setIsLogin(!isLogin); setError(""); }}
           >
-            {isLogin ? "Har inget konto? Skapa ett" : "Har redan konto? Logga in"}
+            {isLogin ? "Don't have an account? Create one" : "Already have an account? Log in"}
           </button>
         </form>
       </DialogContent>

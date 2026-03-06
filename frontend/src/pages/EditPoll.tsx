@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { pollApi } from "../api/polls";
 import { useAuth } from "../context/AuthContext";
@@ -7,8 +7,11 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
-import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound } from "lucide-react";
+import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound, Clipboard, X } from "lucide-react";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
+import { toast } from "sonner";
+
+type Option = { label: string; imageUrl: string; videoUrl: string; audioUrl: string; embedUrl: string; fileUrl: string; fileName: string };
 
 const EditPoll = () => {
   const { shareId } = useParams<{ shareId: string }>();
@@ -23,10 +26,18 @@ const EditPoll = () => {
   const [showWinner, setShowWinner] = useState(true);
   const [deadline, setDeadline] = useState("");
   const [pollStatus, setPollStatus] = useState("published");
-  const [options, setOptions] = useState<{ label: string; imageUrl: string; videoUrl: string; audioUrl: string; embedUrl: string }[]>([]);
+  const [options, setOptions] = useState<Option[]>([]);
   const [pollId, setPollId] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState<number | null>(null);
+  const [uploading, setUploading] = useState<Set<number>>(new Set());
+  const [activeCard, setActiveCard] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const activeCardRef = useRef(activeCard);
+  activeCardRef.current = activeCard;
+  const claimedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const fetchPoll = async () => {
@@ -41,52 +52,122 @@ const EditPoll = () => {
       setDeadline(data.deadline ? new Date(data.deadline).toISOString().slice(0, 16) : "");
       setPollStatus(data.status || "published");
       setPollId(data._id);
-      setOptions(
-        data.options.map((opt: any) => ({
-          label: opt.label || "",
-          imageUrl: opt.imageUrl || "",
-          videoUrl: opt.videoUrl || "",
-          audioUrl: opt.audioUrl || "",
-          embedUrl: opt.embedUrl || "",
-        }))
-      );
+      const opts = data.options.map((opt: any) => ({
+        label: opt.label || "",
+        imageUrl: opt.imageUrl || "",
+        videoUrl: opt.videoUrl || "",
+        audioUrl: opt.audioUrl || "",
+        embedUrl: opt.embedUrl || "",
+        fileUrl: opt.fileUrl || "",
+        fileName: opt.fileName || "",
+      }));
+      setOptions(opts);
+      optionsRef.current = opts;
     };
     fetchPoll();
   }, [shareId]);
 
-  const updateOption = (index: number, field: string, value: string) => {
-    const updated = [...options];
-    updated[index] = { ...updated[index], [field]: value };
-    setOptions(updated);
+  const updateOption = (index: number, fields: Record<string, string>) => {
+    setOptions((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...fields };
+      optionsRef.current = updated;
+      return updated;
+    });
   };
 
   const addOption = () => {
-    setOptions([...options, { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "" }]);
+    setOptions((prev) => {
+      const updated = [...prev, { label: "", imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" }];
+      optionsRef.current = updated;
+      return updated;
+    });
   };
 
   const removeOption = (index: number) => {
-    if (options.length > 2) {
-      setOptions(options.filter((_, i) => i !== index));
-    }
+    setOptions((prev) => {
+      if (prev.length <= 2) return prev;
+      const updated = prev.filter((_, i) => i !== index);
+      optionsRef.current = updated;
+      return updated;
+    });
   };
 
   const handleFileUpload = async (index: number, file: File) => {
-    setUploading(index);
+    claimedRef.current.add(index);
+    setUploading((prev) => new Set(prev).add(index));
     try {
       const data = await pollApi.upload(file);
-      if (data.fileType === "video") {
-        updateOption(index, "videoUrl", data.url);
-      } else if (data.fileType === "audio") {
-        updateOption(index, "audioUrl", data.url);
-      } else {
-        updateOption(index, "imageUrl", data.url || data.imageUrl);
-      }
+      if (data.fileType === "video") updateOption(index, { videoUrl: data.url });
+      else if (data.fileType === "audio") updateOption(index, { audioUrl: data.url });
+      else if (data.fileType === "file") updateOption(index, { fileUrl: data.url, fileName: file.name });
+      else updateOption(index, { imageUrl: data.url || data.imageUrl });
     } catch {
-      // ignored
+      toast("Upload failed");
     } finally {
-      setUploading(null);
+      claimedRef.current.delete(index);
+      setUploading((prev) => { const next = new Set(prev); next.delete(index); return next; });
     }
   };
+
+  const uploadRef = useRef(handleFileUpload);
+  uploadRef.current = handleFileUpload;
+
+  // Global paste: selected card → paste there; otherwise next empty; otherwise new card
+  useEffect(() => {
+    if (!pollId) return; // wait for poll to load
+
+    const isSlotEmpty = (o: Option, idx: number) =>
+      !o.imageUrl && !o.videoUrl && !o.audioUrl && !o.embedUrl && !o.fileUrl && !claimedRef.current.has(idx);
+
+    const findTarget = (): number => {
+      const active = activeCardRef.current;
+      if (active !== null && active < optionsRef.current.length) return active;
+      const opts = optionsRef.current;
+      const emptyIdx = opts.findIndex((o, idx) => isSlotEmpty(o, idx));
+      if (emptyIdx >= 0) return emptyIdx;
+      const newOpt: Option = { label: `Option ${opts.length + 1}`, imageUrl: "", videoUrl: "", audioUrl: "", embedUrl: "", fileUrl: "", fileName: "" };
+      const updated = [...opts, newOpt];
+      setOptions(updated);
+      optionsRef.current = updated;
+      return opts.length;
+    };
+
+    const onPaste = (e: ClipboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          const targetIdx = findTarget();
+          uploadRef.current(targetIdx, file);
+          toast(`Pasted into Option ${targetIdx + 1}`);
+          return;
+        }
+      }
+
+      const text = e.clipboardData?.getData("text/plain")?.trim();
+      if (text && /^https?:\/\//.test(text)) {
+        e.preventDefault();
+        const targetIdx = findTarget();
+        const opts = optionsRef.current;
+        const updated = [...opts];
+        updated[targetIdx] = { ...updated[targetIdx], embedUrl: text };
+        setOptions(updated);
+        optionsRef.current = updated;
+        toast(`URL pasted into Option ${targetIdx + 1}`);
+      }
+    };
+
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [pollId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,40 +189,65 @@ const EditPoll = () => {
           videoUrl: opt.videoUrl,
           audioUrl: opt.audioUrl,
           embedUrl: opt.embedUrl,
+          fileUrl: opt.fileUrl,
+          fileName: opt.fileName,
         })),
       });
       navigate(`/poll/${shareId}`);
     } catch {
-      // ignored
+      toast("Failed to save poll");
     } finally {
       setSaving(false);
     }
   };
 
-  if (!user) return <div className="container mx-auto p-8">Logga in först.</div>;
+  if (!user) return <div className="container mx-auto p-8">Log in first.</div>;
+
+  const goBack = () => navigate(`/poll/${shareId}`);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") goBack();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [shareId]);
 
   return (
-    <div className="container mx-auto p-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Redigera poll</h1>
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={goBack}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit poll"
+        className="absolute inset-y-0 right-0 w-full max-w-2xl bg-background border-l shadow-xl overflow-y-auto animate-in slide-in-from-right duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-background z-10">
+          <h1 className="text-lg font-medium">Edit poll</h1>
+          <button onClick={goBack} aria-label="Close editor" className="p-2 rounded-lg hover:bg-accent transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="title">Titel</Label>
+          <Label htmlFor="title">Title</Label>
           <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="desc">Beskrivning</Label>
+          <Label htmlFor="desc">Description</Label>
           <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
 
         {/* Visibility */}
         <div className="space-y-2">
-          <Label>Synlighet</Label>
+          <Label>Visibility</Label>
           <div className="flex gap-2">
             {[
-              { value: "public", label: "Publik", icon: Eye, desc: "Alla kan se och hitta din poll" },
-              { value: "unlisted", label: "Olistad", icon: EyeOff, desc: "Bara de med länken kan se den" },
-              { value: "private", label: "Privat", icon: Lock, desc: "Bara du kan se den" },
+              { value: "public", label: "Public", icon: Eye, desc: "Anyone can see and find your poll" },
+              { value: "unlisted", label: "Unlisted", icon: EyeOff, desc: "Only people with the link can see it" },
+              { value: "private", label: "Private", icon: Lock, desc: "Only you can see it" },
             ].map((v) => (
               <button
                 key={v.value}
@@ -157,43 +263,41 @@ const EditPoll = () => {
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            {visibility === "public" && "Alla kan se och hitta din poll"}
-            {visibility === "unlisted" && "Bara de med länken kan se den"}
-            {visibility === "private" && "Bara du kan se den"}
+            {visibility === "public" && "Anyone can see and find your poll"}
+            {visibility === "unlisted" && "Only people with the link can see it"}
+            {visibility === "private" && "Only you can see it"}
           </p>
         </div>
 
-        {/* Password (for unlisted/public) */}
+        {/* Password */}
         {visibility !== "private" && (
           <div className="space-y-2">
             <Label htmlFor="password" className="flex items-center gap-2">
               <KeyRound className="h-4 w-4" />
-              Lösenord (valfritt)
+              Password (optional)
             </Label>
             <Input
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Lämna tomt för inget lösenord"
+              placeholder="Leave empty for no password"
             />
             <p className="text-xs text-muted-foreground">
-              Kräver lösenord för att se och rösta
+              Requires password to view and vote
             </p>
           </div>
         )}
 
-        {/* Allow remix toggle */}
         {/* Poll settings */}
         <div className="space-y-3 rounded-lg border p-4">
-          <Label>Inställningar</Label>
+          <Label>Settings</Label>
 
-          {/* Close/open poll */}
           <div className="flex items-center justify-between">
             <span className="text-sm">Status</span>
             <div className="flex gap-1">
               {[
-                { value: "published", label: "Öppen" },
-                { value: "closed", label: "Stängd" },
+                { value: "published", label: "Open" },
+                { value: "closed", label: "Closed" },
               ].map((s) => (
                 <button
                   key={s.value}
@@ -209,16 +313,15 @@ const EditPoll = () => {
             </div>
           </div>
           {pollStatus === "closed" && (
-            <p className="text-xs text-muted-foreground">Inga nya röster kan läggas</p>
+            <p className="text-xs text-muted-foreground">No new votes can be cast</p>
           )}
 
-          {/* Deadline */}
           <div className="space-y-1">
             <label className="text-sm flex items-center justify-between">
-              Deadline (valfri)
+              Deadline (optional)
               {deadline && (
                 <button type="button" onClick={() => setDeadline("")} className="text-xs text-muted-foreground underline">
-                  Ta bort
+                  Remove
                 </button>
               )}
             </label>
@@ -226,45 +329,61 @@ const EditPoll = () => {
               type="datetime-local"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
+              aria-label="Deadline"
             />
             {deadline && new Date(deadline) < new Date() && (
-              <p className="text-xs text-destructive">Deadline har passerat — inga nya röster</p>
+              <p className="text-xs text-destructive">Deadline has passed — no new votes</p>
             )}
           </div>
 
-          {/* Toggles */}
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={showWinner} onChange={(e) => setShowWinner(e.target.checked)} className="rounded" />
-            <span className="text-sm">Visa vinnare</span>
+            <span className="text-sm">Show winner</span>
           </label>
 
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={allowAnonymousVotes} onChange={(e) => setAllowAnonymousVotes(e.target.checked)} className="rounded" />
-            <span className="text-sm">Tillåt anonym röstning</span>
+            <span className="text-sm">Allow anonymous voting</span>
           </label>
 
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={allowRemix} onChange={(e) => setAllowRemix(e.target.checked)} className="rounded" />
-            <span className="text-sm">Tillåt remix</span>
+            <span className="text-sm">Allow remix</span>
           </label>
         </div>
 
         {/* Options */}
         <div className="space-y-4">
-          <Label>Alternativ ({options.length} st)</Label>
+          <div className="flex items-center justify-between">
+            <Label>Options ({options.length} total)</Label>
+            {activeCard !== null && (
+              <span className="text-xs text-muted-foreground">Pasting into Option {activeCard + 1}</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Clipboard className="h-3 w-3" /> Paste images or URLs with Cmd+V / Ctrl+V
+          </p>
           {options.map((opt, i) => (
-            <Card key={i}>
+            <Card
+              key={i}
+              className={`cursor-pointer transition-colors ${
+                activeCard === i ? "ring-2 ring-foreground/20 border-foreground" : ""
+              }`}
+              onClick={() => setActiveCard(activeCard === i ? null : i)}
+            >
               <CardContent className="pt-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-muted-foreground w-6">{i + 1}.</span>
                   <Input
                     value={opt.label}
-                    onChange={(e) => updateOption(i, "label", e.target.value)}
-                    placeholder={`Alternativ ${i + 1}`}
+                    onChange={(e) => updateOption(i, { label: e.target.value })}
+                    placeholder={`Option ${i + 1}`}
+                    aria-label={`Option ${i + 1} label`}
                     required
+                    onClick={(e) => e.stopPropagation()}
                   />
                   {options.length > 2 && (
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(i)}>
+                    <Button type="button" variant="ghost" size="icon" aria-label={`Remove option ${i + 1}`} onClick={(e) => { e.stopPropagation(); removeOption(i); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -273,29 +392,58 @@ const EditPoll = () => {
                 {opt.imageUrl ? (
                   <div className="relative">
                     <img src={opt.imageUrl} alt={opt.label} className="w-full h-40 object-cover rounded" />
-                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => updateOption(i, "imageUrl", "")}>
-                      Ta bort
+                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={(e) => { e.stopPropagation(); updateOption(i, { imageUrl: "" }); }}>
+                      Remove
                     </Button>
                   </div>
                 ) : opt.videoUrl ? (
                   <div className="relative">
-                    <video src={opt.videoUrl} controls className="w-full h-40 rounded" />
-                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => updateOption(i, "videoUrl", "")}>
-                      Ta bort
+                    <video src={opt.videoUrl} controls className="w-full h-40 rounded bg-black" onClick={(e) => e.stopPropagation()} />
+                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={(e) => { e.stopPropagation(); updateOption(i, { videoUrl: "" }); }}>
+                      Remove
                     </Button>
                   </div>
                 ) : opt.audioUrl ? (
+                  <div className="relative p-3 bg-muted/60 rounded">
+                    <audio src={opt.audioUrl} controls className="w-full" onClick={(e) => e.stopPropagation()} />
+                    <Button type="button" variant="destructive" size="sm" className="mt-2" onClick={(e) => { e.stopPropagation(); updateOption(i, { audioUrl: "" }); }}>
+                      Remove
+                    </Button>
+                  </div>
+                ) : opt.fileUrl ? (
                   <div className="relative">
-                    <audio src={opt.audioUrl} controls className="w-full" />
-                    <Button type="button" variant="destructive" size="sm" className="mt-1" onClick={() => updateOption(i, "audioUrl", "")}>
-                      Ta bort
+                    {opt.fileUrl.toLowerCase().includes('.pdf') ? (
+                      <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-40 rounded border-0" />
+                    ) : (
+                      <div className="p-4 bg-muted/60 rounded flex items-center gap-3">
+                        <span className="text-2xl">📄</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{opt.fileName || "File"}</p>
+                          <a href={opt.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">Open file</a>
+                        </div>
+                      </div>
+                    )}
+                    <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={(e) => { e.stopPropagation(); updateOption(i, { fileUrl: "", fileName: "" }); }}>
+                      Remove
                     </Button>
                   </div>
                 ) : (
-                  <div>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+                      dragOver === i ? "border-primary bg-primary/10" : "border-border/60"
+                    }`}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(i); }}
+                    onDragEnter={(e) => { e.preventDefault(); setDragOver(i); }}
+                    onDragLeave={() => setDragOver(null)}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      const file = e.dataTransfer?.files?.[0];
+                      if (file) handleFileUpload(i, file);
+                    }}
+                  >
                     <input
                       type="file"
-                      accept="image/*,video/*,audio/*"
+                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.md,.txt,.csv,.sketch,.fig,.zip,.ppt,.pptx,.xls,.xlsx"
                       capture="environment"
                       className="hidden"
                       id={`edit-file-${i}`}
@@ -308,19 +456,21 @@ const EditPoll = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => document.getElementById(`edit-file-${i}`)?.click()}
-                      disabled={uploading === i}
+                      onClick={(e) => { e.stopPropagation(); document.getElementById(`edit-file-${i}`)?.click(); }}
+                      disabled={uploading.has(i)}
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      {uploading === i ? "Laddar upp..." : "Ladda upp fil"}
+                      {uploading.has(i) ? "Uploading..." : dragOver === i ? "Drop here" : "Drop or click to upload"}
                     </Button>
                   </div>
                 )}
 
                 <Input
                   value={opt.embedUrl}
-                  onChange={(e) => updateOption(i, "embedUrl", e.target.value)}
-                  placeholder="Embed-URL (valfri)"
+                  onChange={(e) => updateOption(i, { embedUrl: e.target.value })}
+                  placeholder="Embed URL (optional)"
+                  aria-label={`Option ${i + 1} embed URL`}
+                  onClick={(e) => e.stopPropagation()}
                 />
                 {opt.embedUrl && toEmbedUrl(opt.embedUrl) ? (
                   <iframe
@@ -333,7 +483,7 @@ const EditPoll = () => {
                   <div className="flex items-center gap-2 p-3 rounded border bg-muted text-sm">
                     <span className="truncate flex-1">{opt.embedUrl}</span>
                     <a href={opt.embedUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline shrink-0">
-                      Öppna
+                      Open
                     </a>
                   </div>
                 ) : null}
@@ -343,14 +493,21 @@ const EditPoll = () => {
 
           <Button type="button" variant="outline" onClick={addOption} className="w-full">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Lägg till alternativ
+            Add option
           </Button>
         </div>
 
-        <Button type="submit" className="w-full" disabled={saving}>
-          {saving ? "Sparar..." : "Spara ändringar"}
-        </Button>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={goBack}>
+            Cancel
+          </Button>
+          <Button type="submit" className="flex-1" disabled={saving}>
+            {saving ? "Saving..." : "Save changes"}
+          </Button>
+        </div>
       </form>
+        </div>
+      </div>
     </div>
   );
 };

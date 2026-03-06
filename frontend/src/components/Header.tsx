@@ -1,58 +1,105 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Vote, LayoutDashboard, PlusCircle, LogIn, User } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
+
+const LogoMark = () => (
+  <svg width="24" height="14" viewBox="0 0 1242 657" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden="true">
+    <path d="M132.234 584.797C68.9754 534.55 30.6254 470.301 19.4563 390.243C15.3078 360.507 15.5755 330.794 18.5121 300.998C19.0191 295.854 21.9956 295.896 25.7406 295.899C84.3964 295.94 143.052 295.928 201.708 295.928C229.869 295.928 258.032 295.821 286.192 296.033C290.926 296.069 292.359 294.873 292.351 289.986C292.207 196.004 292.244 102.021 292.246 8.03861C292.246 -0.120679 292.25 -0.0642185 300.625 0.0149155C336.41 0.353034 371.847 3.42771 406.428 13.3245C431.993 20.6409 456.243 30.9622 479.832 43.3165C524.507 66.7129 563.108 97.3954 594.026 137.174C640.834 197.397 664.036 265.636 660.863 342.252C657.072 433.779 618.389 508.663 550.905 569.182C493.993 620.22 426.457 647.467 350.735 654.563C318.219 657.61 286.162 652.825 254.686 644.743C209.906 633.246 169.065 613.465 132.234 584.797Z" fill="currentColor"/>
+    <path d="M721.233 288.44C721.387 219.951 720.845 151.949 722.011 83.9771C722.539 53.1687 737.719 29.0411 764.053 12.516C773.842 6.37304 784.742 3.21422 796.249 2.77854C806.066 2.4069 815.922 2.4252 825.728 2.92089C828.187 3.04522 831.384 5.09928 832.779 7.22597C847.214 29.2387 861.536 51.3314 875.537 73.6225C951.142 193.986 1026.42 314.555 1102.27 434.764C1147.17 505.928 1192.93 576.551 1238.24 647.457C1239.57 649.534 1240.19 652.058 1241.15 654.374C1238.65 654.941 1236.16 656.005 1233.66 656.004C1116.84 655.972 1000.02 655.792 883.204 655.77C853.876 655.765 824.537 655.83 795.221 656.593C763.214 657.427 741.97 641.636 727.88 614.482C722.403 603.929 721.431 592.153 721.418 580.405C721.329 502.081 721.286 423.758 721.234 345.434C721.222 326.603 721.233 307.771 721.233 288.44Z" fill="currentColor"/>
+    <path d="M183.38 24.614C243.812 67.0427 251.454 155.246 199.035 206.758C165.05 240.156 124.592 250.785 79.1231 235.934C41.7941 223.741 17.3463 197.478 5.76275 159.973C-6.08628 121.609 0.623981 85.9324 23.2501 53.0269C52.911 9.89061 113.618 -7.84553 161.564 12.8807C169.008 16.0985 175.924 20.536 183.38 24.614Z" fill="currentColor"/>
+  </svg>
+);
 
 const Header = () => {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [showAuth, setShowAuth] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const onPollPage = location.pathname.startsWith("/poll/");
+
+  const itemClass = "flex items-center gap-2 px-3 py-2 text-sm rounded-sm hover:bg-accent transition-colors w-full text-left";
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [menuOpen]);
 
   return (
-    <header className="border-b">
-      <div className="container mx-auto flex items-center justify-between p-4">
-        <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-          <Vote className="h-6 w-6" />
-          DesignVote
-        </Link>
+    <>
+      <header className={`fixed top-0 left-0 right-0 z-40 ${onPollPage ? "group" : ""}`}>
+        {onPollPage && (
+          <div className={`absolute inset-0 bg-gradient-to-b from-background/70 to-transparent transition-opacity duration-300 pointer-events-none ${menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+        )}
+        {!onPollPage && <div className="absolute inset-0 bg-background border-b border-border/60" />}
 
-        <nav className="flex items-center gap-2">
-          {user && (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/dashboard">
-                  <LayoutDashboard className="mr-1 h-4 w-4" />
-                  Dashboard
-                </Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link to="/create">
-                  <PlusCircle className="mr-1 h-4 w-4" />
-                  Ny poll
-                </Link>
-              </Button>
-            </>
-          )}
+        <div className="relative flex items-center justify-between px-4 py-3">
+          <Link to={user ? "/welcome" : "/"} className={`flex items-center gap-2 transition-colors ${onPollPage ? "text-foreground/60 hover:text-foreground" : ""}`}>
+            <LogoMark />
+            <span
+              className="text-lg tracking-tight"
+              style={{ fontFamily: '"Exposure Trial", "Apercu", system-ui, sans-serif' }}
+            >
+              Pejla
+            </span>
+          </Link>
 
-          {user ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/profile">
-                <User className="mr-1 h-4 w-4" />
-                {user.username}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={onPollPage ? "text-foreground/60 hover:text-foreground" : ""}
+            aria-label="Menu"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-[-1]" onClick={() => setMenuOpen(false)} />
+            <div role="menu" aria-label="Navigation menu" className="absolute right-4 top-12 bg-popover border rounded-md shadow-lg p-1 min-w-[180px] animate-in fade-in-0 zoom-in-95 z-50">
+              <Link to="/about" onClick={() => setMenuOpen(false)} className={itemClass}>
+                <Info className="h-4 w-4" /> About
               </Link>
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => setShowAuth(true)}>
-              <LogIn className="mr-1 h-4 w-4" />
-              Logga in
-            </Button>
-          )}
-        </nav>
-      </div>
-
+              {user && (
+                <>
+                  <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={itemClass}>
+                    <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  </Link>
+                  <Link to="/create" onClick={() => setMenuOpen(false)} className={itemClass}>
+                    <PlusCircle className="h-4 w-4" /> New poll
+                  </Link>
+                  <Link to="/profile" state={{ backgroundLocation: location }} onClick={() => setMenuOpen(false)} className={itemClass}>
+                    <User className="h-4 w-4" /> {user.username}
+                  </Link>
+                </>
+              )}
+              {!user && (
+                <button onClick={() => { setMenuOpen(false); setShowAuth(true); }} className={itemClass}>
+                  <LogIn className="h-4 w-4" /> Log in
+                </button>
+              )}
+              <div className="border-t border-border/60 mt-1 pt-1">
+                <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className={itemClass}>
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  {theme === "dark" ? "Light mode" : "Dark mode"}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </header>
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
-    </header>
+    </>
   );
 };
 
