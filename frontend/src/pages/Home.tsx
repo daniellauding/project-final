@@ -457,37 +457,54 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             </div>
           </section>
 
-          {/* Recent polls (shown before How it works if available) */}
+          {/* Recent polls — horizontal scroll, vote-card style */}
           {polls.filter((p) => !p.visibility || p.visibility === "public").length > 0 && (
-            <section className="border-t border-border/60 py-16 px-4">
-              <div className="container mx-auto max-w-5xl">
-                <FadeIn>
-                  <h2 className="text-xl md:text-2xl text-center mb-10">Recent polls</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {polls.filter((p) => !p.visibility || p.visibility === "public").slice(0, 3).map((poll) => {
-                      const thumb = getThumbnail(poll);
-                      return (
-                        <Link key={poll._id} to={`/poll/${poll.shareId}`}
-                          className="group block rounded-xl border border-border/60 bg-card overflow-hidden hover:bg-accent/50 transition-colors">
-                          <div className="aspect-video bg-muted relative overflow-hidden">
-                            {thumb ? (
-                              <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-2xl font-bold text-muted-foreground/20">{poll.options.length} opt.</span>
-                              </div>
-                            )}
+            <section className="border-t border-border/60 py-16">
+              <FadeIn>
+                <h2 className="text-xl md:text-2xl text-center mb-3">See what people are deciding</h2>
+                <p className="text-sm text-muted-foreground text-center mb-8">Swipe through real polls — vote on what catches your eye.</p>
+                <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-4 md:px-[max(1rem,calc((100vw-72rem)/2))] pb-4 scrollbar-hide"
+                  style={{ scrollbarWidth: "none" }}>
+                  {polls.filter((p) => !p.visibility || p.visibility === "public").slice(0, 6).map((poll) => {
+                    const thumb = getThumbnail(poll);
+                    return (
+                      <Link key={poll._id} to={`/poll/${poll.shareId}`}
+                        className="group snap-start shrink-0 w-[280px] md:w-[320px] rounded-2xl border border-border/40 bg-card overflow-hidden hover:border-border transition-all hover:shadow-lg">
+                        <div className="aspect-[3/4] bg-muted relative overflow-hidden">
+                          {thumb ? (
+                            <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" loading="lazy" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                              <span className="text-3xl font-bold text-muted-foreground/15">{poll.options.length} options</span>
+                            </div>
+                          )}
+                          {/* Vote count pill */}
+                          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
+                            {poll.totalVotes || 0} votes
                           </div>
-                          <div className="p-4">
-                            <h3 className="font-semibold truncate">{poll.title}</h3>
-                            <p className="text-xs text-muted-foreground mt-1">{poll.totalVotes || 0} votes · {poll.options.length} options</p>
+                          {/* Option dots — like the real vote view */}
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-foreground/50 backdrop-blur-sm rounded-full px-3 py-1.5">
+                            {poll.options.slice(0, 5).map((_, i) => (
+                              <div key={i} className={`rounded-full ${i === 0 ? "w-4 h-1.5 bg-background" : "w-1.5 h-1.5 bg-background/40"}`} />
+                            ))}
                           </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </FadeIn>
-              </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{poll.title}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {poll.options.length} options · by {poll.creatorName}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+                <div className="text-center mt-8">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/explore">Explore all polls <ArrowRight className="ml-1.5 h-3.5 w-3.5" /></Link>
+                  </Button>
+                </div>
+              </FadeIn>
             </section>
           )}
 

@@ -217,7 +217,11 @@ const VotePoll = () => {
   const [loading, setLoading] = useState(true);
   const [votedIndex, setVotedIndex] = useState<number | null>(null);
   const [voting, setVoting] = useState(false);
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const opt = params.get("option");
+    return opt ? Math.max(0, parseInt(opt, 10) - 1) : 0;
+  });
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -260,6 +264,10 @@ const VotePoll = () => {
 
       setPoll(data);
       setNeedsPassword(false);
+      // Clamp ?option= to valid range
+      if (data.results) {
+        setCurrent((c) => Math.min(c, data.results.length - 1));
+      }
       if (user && data.results) {
         const idx = data.results.findIndex((opt: PollOption) =>
           opt.votes?.some((v: string) => v === user.userId)
@@ -550,7 +558,12 @@ const VotePoll = () => {
         </button>
 
         <button
-          onClick={() => { navigator.clipboard.writeText(window.location.href); toast("Link copied!"); }}
+          onClick={() => {
+            const base = `${window.location.origin}/poll/${poll.shareId}`;
+            const url = multiSlide ? `${base}?option=${current + 1}` : base;
+            navigator.clipboard.writeText(url);
+            toast(multiSlide ? `Link to Option ${current + 1} copied!` : "Link copied!");
+          }}
           className="p-3 rounded-full bg-background hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Share link"
         >
