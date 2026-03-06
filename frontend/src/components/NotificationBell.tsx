@@ -23,9 +23,11 @@ export default function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchUnread = async () => {
+    const token = getToken();
+    if (!token) return;
     try {
       const res = await fetch(`${API_URL}/notifications/unread-count`, {
-        headers: { Authorization: getToken() },
+        headers: { Authorization: token },
       });
       const data = await res.json();
       setUnread(data.count || 0);
@@ -33,9 +35,11 @@ export default function NotificationBell() {
   };
 
   const fetchAll = async () => {
+    const token = getToken();
+    if (!token) return;
     try {
       const res = await fetch(`${API_URL}/notifications`, {
-        headers: { Authorization: getToken() },
+        headers: { Authorization: token },
       });
       const data = await res.json();
       setNotifications(data.notifications || []);

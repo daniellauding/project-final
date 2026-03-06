@@ -114,14 +114,6 @@ const Profile = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="container mx-auto p-8 text-center">
-        <p className="text-muted-foreground">Log in to see your profile.</p>
-      </div>
-    );
-  }
-
   const totalVotes = polls.reduce((sum, p) => sum + (p.totalVotes || 0), 0);
   const goBack = useCallback(() => {
     if (window.history.length > 1) navigate(-1);
@@ -135,6 +127,14 @@ const Profile = () => {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [goBack]);
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-8 text-center">
+        <p className="text-muted-foreground">Log in to see your profile.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={goBack}>
@@ -269,7 +269,7 @@ const Profile = () => {
 
       {/* Account actions */}
       <div className="border-t border-border/60 pt-6 space-y-2">
-        <Button variant="ghost" className="w-full justify-start" onClick={() => { logout(); goBack(); }}>
+        <Button variant="ghost" className="w-full justify-start" onClick={() => { logout(); navigate("/"); }}>
           <LogOut className="mr-2 h-4 w-4" /> Log out
         </Button>
         <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleDeleteAccount}>
