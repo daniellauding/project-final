@@ -48,10 +48,7 @@ const optionSchema = new mongoose.Schema({
     enum: ["none", "figma", "lovable", "codepen", "generic"],
     default: "none"
   },
-  votes: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  }]
+  votes: [{ type: String }]
 });
 
 const pollSchema = new mongoose.Schema({

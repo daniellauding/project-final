@@ -1063,10 +1063,10 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl">Welcome back{user.username ? `, ${user.username}` : ""}</h1>
-          <p className="text-sm text-muted-foreground mt-1">Browse recent polls or create your own.</p>
+          <p className="text-sm text-muted-foreground mt-1">Browse recent decisions or start your own.</p>
         </div>
         <Button asChild>
-          <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> New poll</Link>
+          <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> New</Link>
         </Button>
       </div>
 
@@ -1085,9 +1085,46 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {thumb ? (
                       <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    ) : poll.options.some((o: any) => o.textContent) ? (() => {
+                      const textOpt = poll.options.find((o: any) => o.textContent);
+                      const ext = (textOpt?.fileName || "").split(".").pop() || "md";
+                      return (
+                        <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 overflow-hidden relative">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <span className="px-1.5 py-0.5 rounded bg-foreground/10 text-[9px] font-mono font-bold uppercase tracking-wide">{ext}</span>
+                          </div>
+                          <div className="flex-1 text-[10px] leading-relaxed text-muted-foreground/60 font-mono overflow-hidden">
+                            {(textOpt?.textContent || "").slice(0, 200).split("\n").slice(0, 8).map((line: string, li: number) => (
+                              <div key={li} className={line.startsWith("#") ? "font-semibold text-foreground/50 mt-0.5" : ""}>{line || "\u00A0"}</div>
+                            ))}
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-100 dark:from-slate-800 to-transparent" />
+                        </div>
+                      );
+                    })() : poll.options.some((o: any) => o.audioUrl) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-muted/50">
+                        <div className="w-12 h-12 rounded-full bg-foreground/5 flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 text-muted-foreground/30" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M9 18V5l12-2v13" strokeLinecap="round" strokeLinejoin="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                          </svg>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground/40">{poll.options.length} tracks</span>
+                      </div>
+                    ) : poll.options.some((o: any) => o.embedUrl) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-muted/50">
+                        <svg viewBox="0 0 24 24" className="w-8 h-8 text-muted-foreground/20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                        </svg>
+                        <span className="text-[10px] text-muted-foreground/40">Embed</span>
+                      </div>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-2xl font-bold text-muted-foreground/20">{poll.options.length} opt.</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-muted/50 p-4">
+                        <span className="text-sm font-medium text-muted-foreground/25">{poll.title}</span>
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {poll.options.slice(0, 3).map((o: any, oi: number) => (
+                            <span key={oi} className="px-2 py-0.5 rounded-full bg-foreground/5 text-[9px] text-muted-foreground/40 truncate max-w-[100px]">{o.label}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     <div className="absolute bottom-2 right-2 flex gap-1">
@@ -1110,7 +1147,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           </div>
           <div className="text-center mt-10">
             <Button variant="outline" asChild>
-              <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Create a new poll</Link>
+              <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Create new</Link>
             </Button>
           </div>
         </>
