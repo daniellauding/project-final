@@ -1,9 +1,5 @@
 {
   "$schema": "https://tr.designtokens.org/format/",
-  "_comment": "Pejla Design Tokens — Expanded with UI Patterns & Future Recommendations",
-  "_version": "1.1.0",
-  "_lastUpdated": "2026-03-06",
-  
   "colors": {
     "primitive": {
       "gray": {
@@ -48,12 +44,7 @@
         "700": "oklch(0.645 0.246 16.439)"
       },
       "white": "oklch(1 0 0)",
-      "black": "oklch(0 0 0)",
-      "_collab": {
-        "cursor1": "#f9a8d4",
-        "cursor2": "#93c5fd",
-        "cursor3": "#86efac"
-      }
+      "black": "oklch(0 0 0)"
     },
     "semantic": {
       "background": {
@@ -178,201 +169,6 @@
       }
     }
   },
-
-  "patterns": {
-    "_comment": "Repeated UI patterns identified through product audit",
-    "card": {
-      "elevation-level1": "{shadows.sm}",
-      "elevation-level2": "{shadows.lg}",
-      "elevation-level3": "{shadows.xl}",
-      "elevation-hover": "{shadows.xl}",
-      "background": "{colors.semantic.background.card}",
-      "border": "{colors.semantic.border.default}",
-      "border-opacity": 0.4,
-      "radius": "{radii.2xl}",
-      "padding": "{spacing.scale.6}"
-    },
-    "cta-button": {
-      "background": "{colors.semantic.brand.primary}",
-      "foreground": "{colors.semantic.brand.primary-foreground}",
-      "radius": "{radii.full}",
-      "padding-x": "{spacing.scale.6}",
-      "padding-y": "{spacing.scale.3}",
-      "shadow": "{shadows.button.default}",
-      "shadow-hover": "{shadows.button.hover}",
-      "brightness-hover": 1.1,
-      "scale-active": "{animations.scale.active}",
-      "transition-duration": "{animations.duration.base}"
-    },
-    "badge-overlay": {
-      "background": "rgba(0, 0, 0, 0.6)",
-      "foreground": "{colors.primitive.white}",
-      "backdrop-blur": "{blur.sm}",
-      "text-size": "{typography.fontSizes.xs}",
-      "padding-x": 10,
-      "padding-y": 4,
-      "radius": "{radii.full}"
-    },
-    "badge-inline": {
-      "background": "rgba(0, 0, 0, 0.1)",
-      "text-size": "{typography.fontSizes.xs}",
-      "padding-x": "{spacing.scale.2}",
-      "padding-y": "{spacing.scale.0.5}",
-      "radius": "{radii.sm}"
-    },
-    "modal": {
-      "backdrop-color": "{colors.semantic.background.default}",
-      "backdrop-opacity": 0.8,
-      "backdrop-blur": "{blur.sm}",
-      "content-background": "{colors.semantic.background.popover}",
-      "content-shadow": "{shadows.lg}",
-      "content-radius": "{radii.lg}",
-      "content-padding": "{spacing.scale.6}",
-      "max-width-small": 448,
-      "max-width-large": 672
-    },
-    "navigation": {
-      "header-height": 56,
-      "header-background": "{colors.semantic.background.default}",
-      "header-border": "{colors.semantic.border.default}",
-      "header-border-opacity": 0.6,
-      "sticky-background": "{colors.semantic.background.card}",
-      "sticky-background-opacity": 0.95,
-      "sticky-backdrop-blur": "{blur.sm}",
-      "z-index": "{zIndex.fixed}"
-    },
-    "section-spacing": {
-      "vertical-mobile": "{spacing.scale.16}",
-      "vertical-desktop": "{spacing.scale.24}",
-      "horizontal": "{spacing.scale.4}",
-      "gap-tight": "{spacing.scale.3}",
-      "gap-standard": "{spacing.scale.4}",
-      "gap-loose": "{spacing.scale.6}"
-    },
-    "empty-state": {
-      "icon-size": 64,
-      "icon-background": "{colors.semantic.muted.default}",
-      "icon-color": "{colors.semantic.muted.foreground}",
-      "title-size": "{typography.fontSizes.lg}",
-      "title-weight": "{typography.fontWeights.semibold}",
-      "description-size": "{typography.fontSizes.sm}",
-      "description-color": "{colors.semantic.text.muted}",
-      "spacing-between": "{spacing.scale.4}"
-    },
-    "loading-skeleton": {
-      "background": "{colors.semantic.muted.default}",
-      "animation": "pulse"
-    },
-    "file-type-badge": {
-      "background-opacity": 0.1,
-      "font-family": "{typography.fontFamilies.mono}",
-      "text-size": 10,
-      "text-transform": "uppercase",
-      "padding-x": "{spacing.scale.2}",
-      "padding-y": "{spacing.scale.0.5}",
-      "radius": "{radii.sm}"
-    }
-  },
-
-  "recommended": {
-    "_comment": "Future semantic tokens for roadmap features (Org/Teams, Monetization, Settings)",
-    "organization": {
-      "switcher-bg": "{colors.semantic.background.card}",
-      "switcher-border": "{colors.semantic.border.default}",
-      "switcher-hover": "{colors.semantic.accent.default}",
-      "member-role-admin": "{colors.primitive.purple.500}",
-      "member-role-member": "{colors.primitive.gray.600}",
-      "member-role-guest": "{colors.primitive.gray.400}"
-    },
-    "billing": {
-      "plan-free-bg": "{colors.semantic.background.default}",
-      "plan-pro-bg": "{colors.semantic.brand.primary}",
-      "plan-enterprise-bg": "{colors.primitive.gray.900}",
-      "plan-recommended-border": "{colors.primitive.orange.500}",
-      "upgrade-cta-bg": "{colors.primitive.purple.500}",
-      "usage-warning": "{colors.primitive.yellow.500}",
-      "usage-exceeded": "{colors.semantic.destructive.default}"
-    },
-    "settings": {
-      "sidebar-bg": "{colors.semantic.background.sidebar}",
-      "sidebar-active": "{colors.semantic.accent.sidebar}",
-      "section-divider": "{colors.semantic.border.sidebar}",
-      "danger-zone-bg": "{colors.semantic.destructive.default}",
-      "danger-zone-bg-opacity": 0.1,
-      "danger-zone-border": "{colors.semantic.destructive.default}",
-      "feature-toggle-active": "{colors.primitive.green.500}",
-      "feature-toggle-inactive": "{colors.primitive.gray.400}"
-    },
-    "forms-advanced": {
-      "multi-step-active": "{colors.semantic.brand.primary}",
-      "multi-step-complete": "{colors.primitive.green.500}",
-      "multi-step-incomplete": "{colors.primitive.gray.300}",
-      "file-upload-border": "{colors.semantic.border.input}",
-      "file-upload-hover-bg": "{colors.semantic.brand.primary}",
-      "file-upload-hover-bg-opacity": 0.2,
-      "tag-bg": "{colors.semantic.accent.default}",
-      "tag-remove-hover": "{colors.semantic.destructive.default}"
-    },
-    "dataviz": {
-      "stat-increase": "{colors.primitive.green.500}",
-      "stat-decrease": "{colors.primitive.red.500}",
-      "stat-neutral": "{colors.primitive.gray.600}",
-      "progress-bar-bg": "{colors.semantic.muted.default}",
-      "progress-bar-fill": "{colors.semantic.brand.primary}"
-    },
-    "activity": {
-      "feed-item-bg": "{colors.semantic.background.card}",
-      "feed-item-hover": "{colors.semantic.accent.default}",
-      "timeline-line": "{colors.semantic.border.default}",
-      "timeline-dot-active": "{colors.semantic.brand.primary}",
-      "timeline-dot-inactive": "{colors.primitive.gray.400}",
-      "notification-unread-bg": "{colors.semantic.brand.primary}",
-      "notification-unread-bg-opacity": 0.1
-    },
-    "marketing": {
-      "hero-gradient-start": "{colors.semantic.background.default}",
-      "hero-gradient-end": "{colors.semantic.brand.primary}",
-      "hero-gradient-end-opacity": 0.05,
-      "feature-icon-bg": "{colors.semantic.accent.default}",
-      "testimonial-quote": "{colors.semantic.text.muted}",
-      "pricing-highlight": "{colors.semantic.brand.primary}",
-      "cta-section-bg": "{colors.semantic.brand.primary}",
-      "cta-section-text": "{colors.semantic.brand.primary-foreground}"
-    },
-    "filetypes": {
-      "image-bg": "{colors.primitive.blue.500}",
-      "video-bg": "{colors.primitive.purple.500}",
-      "audio-bg": "{colors.primitive.pink.500}",
-      "document-bg": "{colors.primitive.gray.400}",
-      "code-bg": "{colors.primitive.orange.500}",
-      "bg-opacity": 0.1
-    },
-    "status": {
-      "success-bg": "{colors.primitive.green.500}",
-      "success-bg-opacity": 0.1,
-      "success-text": "{colors.primitive.green.600}",
-      "warning-bg": "{colors.primitive.yellow.500}",
-      "warning-bg-opacity": 0.1,
-      "warning-text": "{colors.primitive.orange.500}",
-      "error-bg": "{colors.semantic.destructive.default}",
-      "error-bg-opacity": 0.1,
-      "error-text": "{colors.semantic.destructive.default}",
-      "info-bg": "{colors.primitive.blue.500}",
-      "info-bg-opacity": 0.1,
-      "info-text": "{colors.primitive.blue.500}"
-    },
-    "collaboration": {
-      "remix-badge-bg": "{colors.semantic.brand.primary}",
-      "remix-badge-bg-opacity": 0.7,
-      "remix-badge-text": "{colors.semantic.background.default}",
-      "collaborator-cursor-1": "{colors.primitive._collab.cursor1}",
-      "collaborator-cursor-2": "{colors.primitive._collab.cursor2}",
-      "collaborator-cursor-3": "{colors.primitive._collab.cursor3}",
-      "vote-indicator-active": "{colors.semantic.brand.primary}",
-      "vote-indicator-inactive": "{colors.primitive.gray.400}"
-    }
-  },
-
   "spacing": {
     "base": 4,
     "scale": {
@@ -411,7 +207,6 @@
       "96": 384
     }
   },
-
   "typography": {
     "fontFamilies": {
       "sans": "\"Apercu\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
@@ -457,7 +252,6 @@
       "widest": "0.1em"
     }
   },
-
   "radii": {
     "none": 0,
     "sm": 4,
@@ -469,7 +263,6 @@
     "3xl": 24,
     "full": 9999
   },
-
   "shadows": {
     "none": "none",
     "xs": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
@@ -490,7 +283,6 @@
       "outline-hover": "0 2px 8px 0 rgba(0, 0, 0, 0.08)"
     }
   },
-
   "animations": {
     "duration": {
       "instant": 0,
@@ -513,7 +305,6 @@
       "hover": 1.02
     }
   },
-
   "blur": {
     "none": 0,
     "sm": 4,
@@ -524,7 +315,6 @@
     "2xl": 40,
     "3xl": 64
   },
-
   "opacity": {
     "0": 0,
     "5": 0.05,
@@ -543,7 +333,6 @@
     "95": 0.95,
     "100": 1
   },
-
   "zIndex": {
     "0": 0,
     "10": 10,
