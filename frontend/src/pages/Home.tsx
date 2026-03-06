@@ -323,7 +323,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                           className="group block rounded-xl border border-border/60 bg-card overflow-hidden hover:bg-accent/50 transition-colors">
                           <div className="aspect-video bg-muted relative overflow-hidden">
                             {thumb ? (
-                              <img src={thumb} alt={poll.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                              <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
                                 <span className="text-2xl font-bold text-muted-foreground/20">{poll.options.length} opt.</span>
@@ -331,7 +331,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                             )}
                           </div>
                           <div className="p-4">
-                            <h4 className="font-semibold truncate">{poll.title}</h4>
+                            <h3 className="font-semibold truncate">{poll.title}</h3>
                             <p className="text-xs text-muted-foreground mt-1">{poll.totalVotes || 0} votes · {poll.options.length} options</p>
                           </div>
                         </Link>
@@ -394,7 +394,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                   className="group block rounded-xl border border-border/60 bg-card overflow-hidden hover:bg-accent/50 transition-colors">
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     {thumb ? (
-                      <img src={thumb} alt={poll.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="text-2xl font-bold text-muted-foreground/20">{poll.options.length} opt.</span>
@@ -405,7 +405,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h4 className="font-semibold truncate group-hover:text-primary transition-colors">{poll.title}</h4>
+                    <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{poll.title}</h3>
                     <p className="text-xs text-muted-foreground">By {poll.creatorName} · {poll.options.length} options</p>
                   </div>
                 </Link>

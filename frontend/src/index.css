@@ -198,6 +198,11 @@ h4, h5, h6 {
   letter-spacing: -0.015em;
 }
 
+::selection {
+  background: oklch(0.488 0.243 264.376 / 30%);
+  color: inherit;
+}
+
 /* Hide scrollbar but keep scrolling */
 .scrollbar-hide { scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
