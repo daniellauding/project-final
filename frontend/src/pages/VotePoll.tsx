@@ -67,6 +67,7 @@ function OptionMedia({ opt }: { opt: PollOption }) {
         src={toEmbedUrl(opt.embedUrl)!}
         title={opt.label}
         className="w-full h-full border-0"
+        sandbox="allow-scripts allow-same-origin"
         allowFullScreen
       />
     );
