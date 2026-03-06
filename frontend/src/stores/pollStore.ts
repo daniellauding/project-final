@@ -7,6 +7,10 @@ interface PollOption {
   videoUrl?: string;
   audioUrl?: string;
   embedUrl?: string;
+  fileUrl?: string;
+  fileName?: string;
+  textContent?: string;
+  coverUrl?: string;
   voteCount: number;
   percentage: number;
   votes: string[];

@@ -409,10 +409,10 @@ const VotePoll = () => {
         fetchPoll();
         toast(votedIndex !== null ? "Vote changed!" : "Voted!");
       } else {
-        toast(data.error || "Something went wrong — please try again");
+        toast.error(data.error || "Something went wrong — try again or reach out at hello@pejla.io");
       }
     } catch {
-      toast("Could not connect — check your internet and try again");
+      toast.error("Could not connect — check your internet and try again");
     } finally {
       setVoting(false);
     }

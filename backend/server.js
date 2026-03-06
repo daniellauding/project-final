@@ -386,7 +386,7 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
 
     res.json({ success: true, message: "Vote recorded!" });
   } catch (error) {
-    res.status(400).json({ success: false, error: "Something went wrong — please try again" });
+    res.status(500).json({ success: false, error: "Something went wrong — try again or reach out at hello@pejla.io" });
   }
 });
 
@@ -416,7 +416,7 @@ app.post("/polls/:id/vote-anonymous", async (req, res) => {
     await poll.save();
     res.json({ success: true, message: "Anonymous vote recorded!" });
   } catch (error) {
-    res.status(400).json({ success: false, error: "Something went wrong — please try again" });
+    res.status(500).json({ success: false, error: "Something went wrong — try again or reach out at hello@pejla.io" });
   }
 });
 

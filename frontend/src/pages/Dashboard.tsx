@@ -57,7 +57,7 @@ const Dashboard = () => {
     return (
       <div className="container mx-auto p-8 text-center">
         <h1 className="text-2xl font-bold mb-4">Log in</h1>
-        <p className="text-muted-foreground">You need to log in to see your polls.</p>
+        <p className="text-muted-foreground">Log in to see your contributions.</p>
       </div>
     );
   }
@@ -76,13 +76,13 @@ const Dashboard = () => {
     <div className="container mx-auto p-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Your polls</h1>
+          <h1 className="text-2xl font-bold">Your decisions</h1>
           <p className="text-sm text-muted-foreground">{polls.length} contributions</p>
         </div>
         <Button asChild>
           <Link to="/create">
             <PlusCircle className="mr-2 h-4 w-4" />
-            New poll
+            New
           </Link>
         </Button>
       </div>
@@ -90,29 +90,28 @@ const Dashboard = () => {
       {polls.length === 0 ? (
         <div className="text-center py-20 max-w-md mx-auto">
           <Inbox className="mx-auto h-10 w-10 text-muted-foreground/40 mb-6" />
-          <h2 className="text-xl font-medium mb-2">No polls yet</h2>
+          <h2 className="text-xl font-medium mb-2">Nothing here yet</h2>
           <p className="text-muted-foreground mb-6">
-            Create your first poll — upload images, paste a Figma link,
-            and share it with your team for feedback.
+            Share designs, videos, briefs, or tracks — collect votes and find out what works.
           </p>
           <Button size="lg" asChild>
             <Link to="/create">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Create your first poll
+              Get started
             </Link>
           </Button>
           <div className="grid grid-cols-3 gap-4 mt-12 text-left">
             <div>
-              <p className="text-xs font-medium mb-1">Images & Figma</p>
-              <p className="text-xs text-muted-foreground">Upload files or embed live designs</p>
+              <p className="text-xs font-medium mb-1">Any format</p>
+              <p className="text-xs text-muted-foreground">Images, video, audio, Figma, text</p>
             </div>
             <div>
               <p className="text-xs font-medium mb-1">One-tap voting</p>
               <p className="text-xs text-muted-foreground">Share a link, get votes instantly</p>
             </div>
             <div>
-              <p className="text-xs font-medium mb-1">Clear results</p>
-              <p className="text-xs text-muted-foreground">See the winner with comments</p>
+              <p className="text-xs font-medium mb-1">Clear winner</p>
+              <p className="text-xs text-muted-foreground">Results with comments and remixes</p>
             </div>
           </div>
         </div>
