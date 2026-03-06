@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
 import {
-  PlusCircle, ArrowRight, ImagePlus, MousePointerClick, BarChart3, Lock
+  PlusCircle, ArrowRight, ImagePlus, MousePointerClick, BarChart3, Lock, ChevronLeft, ChevronRight
 } from "lucide-react";
 import AuthModal from "../components/AuthModal";
 
@@ -399,6 +399,264 @@ function FloatingCursors() {
   );
 }
 
+/* ── Hero poll preview (right side card with slide animation) ── */
+function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThumbnail: (p: any) => string | null; onCta: () => void }) {
+  const maxSlides = Math.min(polls.length, 3);
+  const [idx, setIdx] = useState(0);
+  const [dir, setDir] = useState(0); // -1 left, 1 right
+  const isCtaSlide = idx >= maxSlides;
+  const poll = polls[Math.min(idx, maxSlides - 1)];
+  const thumb = !isCtaSlide ? getThumbnail(poll) : null;
+  const prev = () => { setDir(-1); setIdx((i) => (i > 0 ? i - 1 : maxSlides)); };
+  const next = () => { setDir(1); setIdx((i) => (i < maxSlides ? i + 1 : 0)); };
+
+  const slideClass = dir === 1
+    ? "animate-[slideInRight_0.3s_ease-out]"
+    : dir === -1
+    ? "animate-[slideInLeft_0.3s_ease-out]"
+    : "";
+
+  return (
+    <div className="flex flex-col items-start">
+      <style>{`
+        @keyframes slideInRight { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInLeft { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      `}</style>
+      {/* Header: label + arrows */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-sm font-medium text-foreground">Recent polls</span>
+        <div className="flex gap-1.5">
+          <button onClick={prev} className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Previous">
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={next} className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Next">
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      {/* Card with slide animation */}
+      <div key={idx} className={slideClass}>
+        {isCtaSlide ? (
+          <div className="w-[340px] xl:w-[380px] h-[480px] xl:h-[520px] rounded-2xl border border-border/40 bg-card shadow-lg flex flex-col items-center justify-center text-center p-8 gap-4">
+            <h3 className="text-xl font-semibold">Your turn</h3>
+            <p className="text-sm text-muted-foreground">Share your work and get real feedback in minutes.</p>
+            <button onClick={onCta} className="mt-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:brightness-110 transition flex items-center gap-2">
+              Share your work <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <Link to={`/poll/${poll.shareId}`}
+            className="group block w-[340px] xl:w-[380px] rounded-2xl border border-border/40 bg-card overflow-hidden shadow-lg hover:shadow-xl transition-all">
+            <div className="h-[400px] xl:h-[440px] bg-muted relative overflow-hidden">
+              {thumb ? (
+                <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-muted/50 p-6">
+                  <span className="text-4xl font-bold text-muted-foreground/10">{poll.options.length}</span>
+                  <span className="text-sm text-muted-foreground/40">options to vote on</span>
+                </div>
+              )}
+              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
+                {poll.totalVotes || 0} votes
+              </div>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-foreground/50 backdrop-blur-sm rounded-full px-3 py-1.5">
+                {poll.options.slice(0, 5).map((_: any, i: number) => (
+                  <div key={i} className={`rounded-full ${i === 0 ? "w-4 h-1.5 bg-background" : "w-1.5 h-1.5 bg-background/40"}`} />
+                ))}
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold truncate group-hover:text-primary transition-colors">{poll.title}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{poll.options.length} options · {poll.creatorName}</p>
+            </div>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Click ripple effect — covers entire page ── */
+function ClickRipple() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rippleColors = ["#f9a8d4", "#93c5fd", "#86efac"];
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const parent = container.parentElement;
+    if (!parent) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const rect = parent.getBoundingClientRect();
+      const x = e.clientX - rect.left + parent.scrollLeft;
+      const y = e.clientY - rect.top + parent.scrollTop;
+      const color = rippleColors[Math.floor(Math.random() * rippleColors.length)];
+      const ripple = document.createElement("div");
+      ripple.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:0;height:0;border-radius:50%;background:${color};opacity:0.4;pointer-events:none;transform:translate(-50%,-50%);z-index:50;`;
+      container.appendChild(ripple);
+      ripple.animate(
+        [
+          { width: "0px", height: "0px", opacity: 0.4 },
+          { width: "70px", height: "70px", opacity: 0 },
+        ],
+        { duration: 500, easing: "ease-out" }
+      ).onfinish = () => ripple.remove();
+    };
+
+    parent.addEventListener("click", handleClick);
+    return () => parent.removeEventListener("click", handleClick);
+  }, []);
+
+  return <div ref={containerRef} className="absolute top-0 left-0 w-full pointer-events-none z-50 overflow-visible" style={{ height: "1px" }} />;
+}
+
+/* ── Scroll-driven slide-in from right ── */
+function ScrollSlideIn({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // 0 when element bottom is at viewport bottom, 1 when element top reaches viewport center
+      const raw = 1 - (rect.top - vh * 0.5) / (vh * 0.5);
+      setProgress(Math.max(0, Math.min(1, raw)));
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        transform: `translateX(${(1 - progress) * 80}px)`,
+        opacity: progress,
+        transition: "transform 0.1s linear, opacity 0.1s linear",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ── Recent polls carousel — 3-4 visible, focused center ── */
+function RecentPollsCarousel({ polls, getThumbnail }: { polls: any[]; getThumbnail: (p: any) => string | null }) {
+  const [focus, setFocus] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const items = polls.slice(0, 8);
+  const prev = () => setFocus((f) => Math.max(0, f - 1));
+  const next = () => setFocus((f) => Math.min(items.length - 1, f + 1));
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const card = el.children[focus] as HTMLElement;
+    if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [focus]);
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-6 md:px-12 mb-8">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl md:text-2xl">Recent polls</h2>
+          <div className="flex gap-1.5">
+            <button onClick={prev} disabled={focus === 0}
+              className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition disabled:opacity-30" aria-label="Previous">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button onClick={next} disabled={focus >= items.length - 1}
+              className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition disabled:opacity-30" aria-label="Next">
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          View all <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      <div ref={scrollRef}
+        className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-6 md:px-[calc((100vw-1200px)/2+1.5rem)] pb-4"
+        style={{ scrollbarWidth: "none", scrollSnapType: "x mandatory" }}>
+        {items.map((poll, i) => {
+          const thumb = getThumbnail(poll);
+          const isFocused = i === focus;
+          return (
+            <Link key={poll._id} to={`/poll/${poll.shareId}`}
+              onClick={(e) => { if (!isFocused) { e.preventDefault(); setFocus(i); } }}
+              className={`group snap-center shrink-0 rounded-2xl border bg-card overflow-hidden transition-all duration-500 ${
+                isFocused
+                  ? "w-[320px] md:w-[380px] border-primary/30 shadow-xl scale-100"
+                  : "w-[240px] md:w-[280px] border-border/30 shadow-sm scale-[0.92] opacity-60"
+              }`}>
+              <div className={`bg-muted relative overflow-hidden transition-all duration-500 ${isFocused ? "h-[340px] md:h-[400px]" : "h-[260px] md:h-[300px]"}`}>
+                {thumb ? (
+                  <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-muted/50">
+                    <span className="text-3xl font-bold text-muted-foreground/10">{poll.options.length}</span>
+                    <span className="text-xs text-muted-foreground/30">options</span>
+                  </div>
+                )}
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
+                  {poll.totalVotes || 0} votes
+                </div>
+                {isFocused && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-foreground/50 backdrop-blur-sm rounded-full px-3 py-1.5">
+                    {poll.options.slice(0, 5).map((_: any, j: number) => (
+                      <div key={j} className={`rounded-full ${j === 0 ? "w-4 h-1.5 bg-background" : "w-1.5 h-1.5 bg-background/40"}`} />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className={`font-semibold truncate group-hover:text-primary transition-colors ${isFocused ? "text-lg" : "text-sm"}`}>{poll.title}</h3>
+                <p className="text-xs text-muted-foreground mt-1">{poll.options.length} options · by {poll.creatorName}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/* ── Scroll fade-out (hero poll card slides away) ── */
+function ScrollFadeOut({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const update = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
+  const fade = Math.max(0, 1 - scrollY / 400);
+  const shift = scrollY * 0.4;
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: fade,
+        transform: `translateX(${shift}px)`,
+        transition: "none",
+        willChange: "transform, opacity",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 /* ── Steps ── */
 const steps = [
   { icon: ImagePlus, title: "Share", desc: "Upload images, Figma embeds, or video. Compare iterations side by side." },
@@ -422,10 +680,13 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
     return null;
   };
 
+  const publicPolls = polls.filter((p) => !p.visibility || p.visibility === "public");
+
   if (!user || forceLanding) {
     return (
       <>
-        <div className="min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden relative">
+          <ClickRipple />
           {/* Hero */}
           <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center relative overflow-hidden">
             <FloatingCursors />
@@ -448,6 +709,13 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                 </Button>
               </div>
             </div>
+
+            {/* Poll preview card — fades out on scroll, desktop only */}
+            {publicPolls.length > 0 && (
+              <ScrollFadeOut className="hidden lg:flex absolute right-[-40px] xl:right-[-20px] top-1/2 -translate-y-1/2 z-10">
+                <HeroPollPreview polls={publicPolls} getThumbnail={getThumbnail} onCta={handleCta} />
+              </ScrollFadeOut>
+            )}
           </section>
 
           {/* Quote carousel */}
@@ -457,54 +725,12 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             </div>
           </section>
 
-          {/* Recent polls — horizontal scroll, vote-card style */}
-          {polls.filter((p) => !p.visibility || p.visibility === "public").length > 0 && (
-            <section className="border-t border-border/60 py-16">
-              <FadeIn>
-                <h2 className="text-xl md:text-2xl text-center mb-3">See what people are deciding</h2>
-                <p className="text-sm text-muted-foreground text-center mb-8">Swipe through real polls — vote on what catches your eye.</p>
-                <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-4 md:px-[max(1rem,calc((100vw-72rem)/2))] pb-4 scrollbar-hide"
-                  style={{ scrollbarWidth: "none" }}>
-                  {polls.filter((p) => !p.visibility || p.visibility === "public").slice(0, 6).map((poll) => {
-                    const thumb = getThumbnail(poll);
-                    return (
-                      <Link key={poll._id} to={`/poll/${poll.shareId}`}
-                        className="group snap-start shrink-0 w-[280px] md:w-[320px] rounded-2xl border border-border/40 bg-card overflow-hidden hover:border-border transition-all hover:shadow-lg">
-                        <div className="aspect-[3/4] bg-muted relative overflow-hidden">
-                          {thumb ? (
-                            <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" loading="lazy" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                              <span className="text-3xl font-bold text-muted-foreground/15">{poll.options.length} options</span>
-                            </div>
-                          )}
-                          {/* Vote count pill */}
-                          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
-                            {poll.totalVotes || 0} votes
-                          </div>
-                          {/* Option dots — like the real vote view */}
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-foreground/50 backdrop-blur-sm rounded-full px-3 py-1.5">
-                            {poll.options.slice(0, 5).map((_, i) => (
-                              <div key={i} className={`rounded-full ${i === 0 ? "w-4 h-1.5 bg-background" : "w-1.5 h-1.5 bg-background/40"}`} />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{poll.title}</h3>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {poll.options.length} options · by {poll.creatorName}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-                <div className="text-center mt-8">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/explore">Explore all polls <ArrowRight className="ml-1.5 h-3.5 w-3.5" /></Link>
-                  </Button>
-                </div>
-              </FadeIn>
+          {/* Recent polls — full-width carousel, focus one at a time */}
+          {publicPolls.length > 0 && (
+            <section className="border-t border-border/60 py-16 overflow-hidden">
+              <ScrollSlideIn>
+                <RecentPollsCarousel polls={publicPolls} getThumbnail={getThumbnail} />
+              </ScrollSlideIn>
             </section>
           )}
 
