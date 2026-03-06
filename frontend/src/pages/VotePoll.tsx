@@ -72,20 +72,32 @@ function OptionMedia({ opt }: { opt: PollOption }) {
     );
   }
   if (opt.embedUrl && !toEmbedUrl(opt.embedUrl)) {
+    let domain = "";
+    try { domain = new URL(opt.embedUrl).hostname.replace("www.", ""); } catch {}
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-4 p-8">
-        <span className="text-3xl font-bold text-muted-foreground/30">{opt.label}</span>
+      <div className="w-full h-full flex flex-col items-center justify-center bg-muted p-8">
         <a
           href={opt.embedUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition"
+          className="group flex flex-col items-center gap-5 max-w-sm text-center"
         >
-          Open link in new tab
+          <div className="w-16 h-16 rounded-2xl bg-background border border-border/60 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform">
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+              alt=""
+              className="w-8 h-8 rounded"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">{opt.label}</p>
+            <p className="text-sm text-muted-foreground mt-1">{domain}</p>
+          </div>
+          <span className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium group-hover:opacity-90 transition">
+            Open website
+          </span>
         </a>
-        <p className="text-xs text-muted-foreground text-center max-w-sm">
-          This website doesn't allow embedding. Click above to open.
-        </p>
       </div>
     );
   }
