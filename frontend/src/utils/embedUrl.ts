@@ -3,8 +3,6 @@
  * Other domains (like google.com) block iframes via X-Frame-Options / CSP.
  */
 const EMBEDDABLE_DOMAINS = [
-  "figma.com",
-  "www.figma.com",
   "youtube.com",
   "www.youtube.com",
   "youtu.be",
@@ -52,12 +50,6 @@ export function toEmbedUrl(url: string): string | null {
 
   try {
     const u = new URL(url);
-
-    // Figma
-    if (u.hostname === "www.figma.com" || u.hostname === "figma.com") {
-      if (u.pathname.startsWith("/embed")) return url;
-      return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(url)}`;
-    }
 
     // YouTube
     if (u.hostname === "www.youtube.com" && u.pathname === "/watch") {
