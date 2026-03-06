@@ -13,6 +13,7 @@ import Results from "./pages/Results";
 import EditPoll from "./pages/EditPoll";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
+import Explore from "./pages/Explore";
 import Landing from "./pages/Landing";
 
 const AppRoutes = () => {
@@ -34,6 +35,7 @@ const AppRoutes = () => {
         <Routes location={bgLocation || location}>
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/create/:step?" element={<CreatePoll />} />
           <Route path="/poll/:shareId" element={<VotePoll />} />
           <Route path="/poll/:shareId/option/:optionNum" element={<VotePoll />} />

@@ -797,8 +797,13 @@ function RecentPollsCarousel({ polls, getThumbnail, getOptionMedia }: { polls: a
             >
               <LoopingThumbnail options={poll.options} getOptionMedia={getOptionMedia}
                 className="bg-muted overflow-hidden h-[380px] md:h-[420px] lg:h-[440px]" />
-              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
-                {poll.totalVotes || 0} votes
+              <div className="absolute top-3 right-3 flex gap-1.5">
+                {poll.remixedFrom && (
+                  <span className="px-2.5 py-1 rounded-full bg-primary/70 backdrop-blur-sm text-background text-xs font-medium">Remix</span>
+                )}
+                <span className="px-2.5 py-1 rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
+                  {poll.totalVotes || 0} votes
+                </span>
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold truncate">{poll.title}</h3>
@@ -817,8 +822,8 @@ function RecentPollsCarousel({ polls, getThumbnail, getOptionMedia }: { polls: a
               aria-label={`Design ${i + 1}`} />
           ))}
         </div>
-        <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-          {hasMore ? `View all ${polls.length} designs` : "View all"} <ArrowRight className="h-3.5 w-3.5" />
+        <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          {hasMore ? `View all ${polls.length}` : "View all"} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </>

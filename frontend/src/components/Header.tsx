@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info, Compass } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -71,6 +71,9 @@ const Header = () => {
           <>
             <div className="fixed inset-0 z-[-1]" onClick={() => setMenuOpen(false)} />
             <div role="menu" aria-label="Navigation menu" className="absolute right-4 top-12 bg-popover border rounded-md shadow-lg p-1 min-w-[180px] animate-in fade-in-0 zoom-in-95 z-50">
+              <Link to="/explore" onClick={() => setMenuOpen(false)} className={itemClass}>
+                <Compass className="h-4 w-4" /> Explore
+              </Link>
               <Link to="/about" onClick={() => setMenuOpen(false)} className={itemClass}>
                 <Info className="h-4 w-4" /> About
               </Link>
