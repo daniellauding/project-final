@@ -29,6 +29,7 @@ export default function NotificationBell() {
       const res = await fetch(`${API_URL}/notifications/unread-count`, {
         headers: { Authorization: token },
       });
+      if (res.status === 401) return;
       const data = await res.json();
       setUnread(data.count || 0);
     } catch {}
@@ -41,6 +42,7 @@ export default function NotificationBell() {
       const res = await fetch(`${API_URL}/notifications`, {
         headers: { Authorization: token },
       });
+      if (res.status === 401) return;
       const data = await res.json();
       setNotifications(data.notifications || []);
     } catch {}

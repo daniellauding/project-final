@@ -55,7 +55,7 @@ const Dashboard = () => {
 
   if (!user) {
     return (
-      <div className="container mx-auto p-8 text-center">
+      <div className="container mx-auto p-8 pt-20 text-center">
         <h1 className="text-2xl font-bold mb-4">Log in</h1>
         <p className="text-muted-foreground">Log in to see your contributions.</p>
       </div>
@@ -64,7 +64,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-4 py-8">
+      <div className="container mx-auto p-4 pt-20 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-64" />)}
         </div>
@@ -73,7 +73,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 py-8">
+    <div className="container mx-auto p-4 pt-20 pb-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Your decisions</h1>
