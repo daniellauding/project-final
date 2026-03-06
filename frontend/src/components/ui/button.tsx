@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_1px_3px_0_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] hover:brightness-110 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_4px_12px_0_rgba(0,0,0,0.15)]",
+        default: "bg-primary text-primary-foreground shadow-[var(--shadow-button-default)] hover:brightness-110 hover:shadow-[var(--shadow-button-hover)]",
         destructive:
-          "bg-destructive text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_1px_3px_0_rgba(0,0,0,0.1)] hover:brightness-110 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_4px_12px_0_rgba(0,0,0,0.15)] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-white shadow-[var(--shadow-button-destructive)] hover:brightness-110 hover:shadow-[var(--shadow-button-hover)] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] hover:bg-accent hover:text-accent-foreground hover:shadow-[0_2px_8px_0_rgba(0,0,0,0.08)] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-background shadow-[var(--shadow-button-outline)] hover:bg-accent hover:text-accent-foreground hover:shadow-[var(--shadow-button-outline-hover)] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5),0_1px_2px_0_rgba(0,0,0,0.06)] hover:bg-secondary/70 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),0_2px_8px_0_rgba(0,0,0,0.08)]",
+          "bg-secondary text-secondary-foreground shadow-[var(--shadow-button-secondary)] hover:bg-secondary/70 hover:shadow-[var(--shadow-button-secondary-hover)]",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",

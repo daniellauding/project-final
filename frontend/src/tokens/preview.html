@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pejla Design Tokens — Preview</title>
+  <link rel="stylesheet" href="./tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background);
+      color: var(--color-text-primary);
+      margin: 0;
+      padding: var(--spacing-8);
+      line-height: var(--leading-normal);
+      font-size: var(--text-base);
+      letter-spacing: var(--tracking-normal);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-family: var(--font-display);
+      font-size: var(--text-5xl);
+      font-weight: var(--font-bold);
+      letter-spacing: var(--tracking-tighter);
+      margin: 0 0 var(--spacing-2) 0;
+    }
+    
+    h2 {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: var(--font-semibold);
+      letter-spacing: var(--tracking-tight);
+      margin: var(--spacing-12) 0 var(--spacing-4) 0;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: var(--spacing-2);
+    }
+    
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-medium);
+      margin: var(--spacing-6) 0 var(--spacing-3) 0;
+    }
+    
+    .theme-toggle {
+      position: fixed;
+      top: var(--spacing-4);
+      right: var(--spacing-4);
+      background: var(--color-brand-primary);
+      color: var(--color-brand-primary-foreground);
+      border: none;
+      padding: var(--spacing-3) var(--spacing-6);
+      border-radius: var(--radius-full);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      cursor: pointer;
+      box-shadow: var(--shadow-button-default);
+      transition: all var(--duration-base) var(--ease-out);
+    }
+    
+    .theme-toggle:hover {
+      box-shadow: var(--shadow-button-hover);
+      transform: scale(var(--scale-hover));
+    }
+    
+    .theme-toggle:active {
+      transform: scale(var(--scale-active));
+    }
+    
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: var(--spacing-3);
+      margin: var(--spacing-4) 0;
+    }
+    
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-xs);
+      text-align: center;
+      padding: var(--spacing-2);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .spacing-example {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-4);
+      margin: var(--spacing-2) 0;
+    }
+    
+    .spacing-box {
+      background: var(--color-brand-primary);
+      height: 40px;
+      border-radius: var(--radius-sm);
+    }
+    
+    .spacing-label {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+    
+    .typography-example {
+      margin: var(--spacing-4) 0;
+      padding: var(--spacing-4);
+      background: var(--color-background-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+    }
+    
+    .shadow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: var(--spacing-6);
+      margin: var(--spacing-4) 0;
+    }
+    
+    .shadow-example {
+      height: 100px;
+      background: var(--color-background-card);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+    }
+    
+    .button-examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-3);
+      margin: var(--spacing-4) 0;
+    }
+    
+    .btn {
+      padding: var(--spacing-3) var(--spacing-6);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      cursor: pointer;
+      transition: all var(--duration-base) var(--ease-out);
+    }
+    
+    .btn-primary {
+      background: var(--color-brand-primary);
+      color: var(--color-brand-primary-foreground);
+      box-shadow: var(--shadow-button-default);
+    }
+    
+    .btn-primary:hover {
+      box-shadow: var(--shadow-button-hover);
+    }
+    
+    .btn-secondary {
+      background: var(--color-brand-secondary);
+      color: var(--color-brand-secondary-foreground);
+      box-shadow: var(--shadow-button-secondary);
+    }
+    
+    .btn-destructive {
+      background: var(--color-destructive);
+      color: var(--color-destructive-foreground);
+      box-shadow: var(--shadow-button-destructive);
+    }
+    
+    .btn-outline {
+      background: var(--color-background);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-primary);
+      box-shadow: var(--shadow-button-outline);
+    }
+    
+    code {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      background: var(--color-muted);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌙</span> Toggle Theme
+  </button>
+
+  <div class="container">
+    <h1>Pejla Design Tokens</h1>
+    <p style="font-size: var(--text-lg); color: var(--color-text-secondary); margin-bottom: var(--spacing-8);">
+      A comprehensive design system for Pejla — 200+ tokens across colors, spacing, typography, and more.
+    </p>
+
+    <h2>🎨 Colors</h2>
+    
+    <h3>Primitive — Gray Scale</h3>
+    <div class="color-grid">
+      <div class="color-swatch" style="background: var(--color-gray-50); color: var(--color-gray-900);">gray-50</div>
+      <div class="color-swatch" style="background: var(--color-gray-100); color: var(--color-gray-900);">gray-100</div>
+      <div class="color-swatch" style="background: var(--color-gray-200); color: var(--color-gray-900);">gray-200</div>
+      <div class="color-swatch" style="background: var(--color-gray-300); color: var(--color-gray-900);">gray-300</div>
+      <div class="color-swatch" style="background: var(--color-gray-400); color: var(--color-white);">gray-400</div>
+      <div class="color-swatch" style="background: var(--color-gray-500); color: var(--color-white);">gray-500</div>
+      <div class="color-swatch" style="background: var(--color-gray-600); color: var(--color-white);">gray-600</div>
+      <div class="color-swatch" style="background: var(--color-gray-700); color: var(--color-white);">gray-700</div>
+      <div class="color-swatch" style="background: var(--color-gray-800); color: var(--color-white);">gray-800</div>
+      <div class="color-swatch" style="background: var(--color-gray-900); color: var(--color-white);">gray-900</div>
+      <div class="color-swatch" style="background: var(--color-gray-950); color: var(--color-white);">gray-950</div>
+      <div class="color-swatch" style="background: var(--color-gray-1000); color: var(--color-white);">gray-1000</div>
+    </div>
+
+    <h3>Semantic — UI Colors</h3>
+    <div class="color-grid">
+      <div class="color-swatch" style="background: var(--color-background);">background</div>
+      <div class="color-swatch" style="background: var(--color-brand-primary);">brand-primary</div>
+      <div class="color-swatch" style="background: var(--color-accent);">accent</div>
+      <div class="color-swatch" style="background: var(--color-muted);">muted</div>
+      <div class="color-swatch" style="background: var(--color-destructive); color: var(--color-white);">destructive</div>
+    </div>
+
+    <h2>📏 Spacing</h2>
+    <div class="spacing-example">
+      <div class="spacing-box" style="width: var(--spacing-2);"></div>
+      <span class="spacing-label">--spacing-2 (8px)</span>
+    </div>
+    <div class="spacing-example">
+      <div class="spacing-box" style="width: var(--spacing-4);"></div>
+      <span class="spacing-label">--spacing-4 (16px)</span>
+    </div>
+    <div class="spacing-example">
+      <div class="spacing-box" style="width: var(--spacing-6);"></div>
+      <span class="spacing-label">--spacing-6 (24px)</span>
+    </div>
+    <div class="spacing-example">
+      <div class="spacing-box" style="width: var(--spacing-8);"></div>
+      <span class="spacing-label">--spacing-8 (32px)</span>
+    </div>
+    <div class="spacing-example">
+      <div class="spacing-box" style="width: var(--spacing-12);"></div>
+      <span class="spacing-label">--spacing-12 (48px)</span>
+    </div>
+    <div class="spacing-example">
+      <div class="spacing-box" style="width: var(--spacing-16);"></div>
+      <span class="spacing-label">--spacing-16 (64px)</span>
+    </div>
+
+    <h2>📝 Typography</h2>
+    <div class="typography-example">
+      <p style="font-family: var(--font-display); font-size: var(--text-5xl); font-weight: var(--font-bold); margin: 0;">
+        Display Heading
+      </p>
+      <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: 0;">
+        <code>--font-display</code> · <code>--text-5xl</code> · <code>--font-bold</code>
+      </p>
+    </div>
+
+    <div class="typography-example">
+      <p style="font-size: var(--text-3xl); font-weight: var(--font-semibold); margin: 0;">
+        Heading 2
+      </p>
+      <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: 0;">
+        <code>--text-3xl</code> · <code>--font-semibold</code>
+      </p>
+    </div>
+
+    <div class="typography-example">
+      <p style="font-size: var(--text-base); line-height: var(--leading-relaxed); margin: 0;">
+        Body text with comfortable line height. This is what most of your content will look like.
+      </p>
+      <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: 0;">
+        <code>--text-base</code> · <code>--leading-relaxed</code>
+      </p>
+    </div>
+
+    <h2>🌑 Shadows</h2>
+    <div class="shadow-grid">
+      <div class="shadow-example" style="box-shadow: var(--shadow-sm);">shadow-sm</div>
+      <div class="shadow-example" style="box-shadow: var(--shadow-base);">shadow-base</div>
+      <div class="shadow-example" style="box-shadow: var(--shadow-md);">shadow-md</div>
+      <div class="shadow-example" style="box-shadow: var(--shadow-lg);">shadow-lg</div>
+      <div class="shadow-example" style="box-shadow: var(--shadow-xl);">shadow-xl</div>
+      <div class="shadow-example" style="box-shadow: var(--shadow-2xl);">shadow-2xl</div>
+    </div>
+
+    <h2>🔘 Buttons</h2>
+    <div class="button-examples">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-destructive">Destructive</button>
+      <button class="btn btn-outline">Outline</button>
+    </div>
+
+    <h2>📦 Border Radius</h2>
+    <div class="button-examples">
+      <div style="width: 80px; height: 80px; background: var(--color-brand-primary); border-radius: var(--radius-sm);"></div>
+      <div style="width: 80px; height: 80px; background: var(--color-brand-primary); border-radius: var(--radius-md);"></div>
+      <div style="width: 80px; height: 80px; background: var(--color-brand-primary); border-radius: var(--radius-lg);"></div>
+      <div style="width: 80px; height: 80px; background: var(--color-brand-primary); border-radius: var(--radius-xl);"></div>
+      <div style="width: 80px; height: 80px; background: var(--color-brand-primary); border-radius: var(--radius-2xl);"></div>
+      <div style="width: 80px; height: 80px; background: var(--color-brand-primary); border-radius: var(--radius-full);"></div>
+    </div>
+
+    <p style="margin-top: var(--spacing-16); padding-top: var(--spacing-8); border-top: 1px solid var(--color-border); font-size: var(--text-sm); color: var(--color-text-muted);">
+      📖 For full documentation, see <code>README.md</code>
+    </p>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const icon = document.getElementById('theme-icon');
+      html.classList.toggle('dark');
+      icon.textContent = html.classList.contains('dark') ? '☀️' : '🌙';
+    }
+    
+    // Auto-detect system theme on load
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+      document.getElementById('theme-icon').textContent = '☀️';
+    }
+  </script>
+</body>
+</html>
