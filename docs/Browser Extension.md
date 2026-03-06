@@ -63,6 +63,8 @@ The extension lets you capture any URL or screenshot and send it to Pejla with o
 - Right-click context menu: "Send image to Pejla"
 - "Compare this page" — capture same URL at different times
 - Annotate screenshot before sending
+- Send poll results to a connected Slack channel via [[Slack Integration]]
+- [[AI Integration]] summary — show AI-generated vote summary in the extension popup for quick review
 
 ## Technical approach
 

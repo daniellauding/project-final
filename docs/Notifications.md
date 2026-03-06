@@ -99,7 +99,11 @@ const notificationSchema = new mongoose.Schema({
 ### Phase 3: External (post-MVP)
 - Email digest (daily/weekly summary)
 - Browser push notifications (Web Push API)
-- Slack webhook integration (per-team setting)
+- [[Slack Integration]] as a full notification channel:
+  - Incoming webhook: post vote/comment/close events to a Slack channel
+  - Per-team and per-user settings for which events trigger Slack messages
+  - Interactive Slack messages: vote directly from the notification
+  - AI vote summaries auto-posted to Slack when a poll closes (via [[AI Integration]])
 - Extension badge shows unread count
 
 ## Aggregation rules (avoid spam)
@@ -108,7 +112,19 @@ const notificationSchema = new mongoose.Schema({
 - Don't notify for own actions
 - Max 1 milestone notification per threshold (10, 25, 50, 100)
 
+## Notification channels summary
+
+| Channel | Phase | Description |
+|---------|-------|-------------|
+| In-app bell | MVP | Bell icon in navbar with dropdown |
+| Email digest | Phase 3 | Daily/weekly summary email |
+| Browser push | Phase 3 | Web Push API notifications |
+| Slack | Phase 3 | Webhook + interactive messages (see [[Slack Integration]]) |
+| Browser extension | Phase 3 | Badge with unread count |
+| Figma plugin | Phase 3 | Notification dot in plugin panel |
+
 ## Extension + Plugin tie-in
 - Browser extension badge shows unread count
 - Figma plugin shows notification dot
-- Both link back to pejla.io notification center
+- Slack channel receives formatted notification cards
+- All channels link back to pejla.io notification center

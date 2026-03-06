@@ -60,6 +60,9 @@ Designers live in Figma. If Pejla is one click away from their canvas, adoption 
 - Figma comments <-> Pejla comments sync
 - Notification badge in plugin when new votes arrive
 - "Compare versions" — select same frame from different pages/branches
+- Vote counts visible inside Figma — see how each frame/option is performing without leaving the canvas
+- [[Slack Integration]] — show which Slack channel a poll was posted to, and surface Slack channel notifications directly in the plugin panel
+- "AI Brief" button — generate a structured feedback brief from selected frames via [[AI Integration]]
 
 ## Technical approach
 

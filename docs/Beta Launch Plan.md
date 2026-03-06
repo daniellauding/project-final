@@ -129,6 +129,7 @@ Free forever. Pro + Team plans coming soon.
 - [ ] Notifications working (users come back)
 - [ ] Team features in UI (not just models)
 - [ ] Figma plugin MVP (huge differentiator)
+- [ ] [[Slack Integration]] MVP — incoming webhook to post results to team channels (launch differentiator for design teams already living in Slack)
 - [ ] Custom domain + professional email (hello@pejla.io)
 - [ ] Support channel (email or Discord)
 
@@ -157,7 +158,9 @@ Free forever. Pro + Team plans coming soon.
 | 5-6 | Product Hunt | Public launch |
 | 7-8 | Stripe + Notifications | Monetization |
 | 9-10 | Figma Plugin MVP | Distribution |
-| 11-12 | LinkedIn + Outreach | Growth |
+| 11-12 | [[Slack Integration]] MVP | Team adoption |
+| 13-14 | LinkedIn + Outreach | Growth |
+| 15+ | [[AI Integration]] (vote summaries, smart tagging) | Differentiation |
 
 ## Key metrics to track
 
@@ -170,3 +173,5 @@ Free forever. Pro + Team plans coming soon.
 | Pro conversions | 10 |
 | Team conversions | 3 |
 | Figma plugin installs | 100 |
+| Slack workspaces connected | 20 |
+| AI summaries generated | 50 |
