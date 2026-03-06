@@ -14,9 +14,11 @@ const storage = new CloudinaryStorage({
     const isVideo = file.mimetype.startsWith("video/");
     const isAudio = file.mimetype.startsWith("audio/");
     const isImage = file.mimetype.startsWith("image/");
+    const isSvg = file.mimetype === "image/svg+xml";
+    const isGif = file.mimetype === "image/gif";
 
     const resourceType = isVideo || isAudio ? "video" : isImage ? "image" : "raw";
-    const transform = isImage ? [{ width: 2400, crop: "limit" }] : [];
+    const transform = isImage && !isSvg && !isGif ? [{ width: 2400, crop: "limit" }] : [];
 
     return {
       folder: "pejla",
