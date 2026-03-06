@@ -157,7 +157,7 @@ function QuoteCarousel() {
 }
 
 /* ── Sequential animated words — plays once after intro, stays on last ── */
-const sequenceWords = ["Design feedback,", "Client reviews,", "Sound design picks,", "Project briefs,", "Creative decisions,"];
+const sequenceWords = ["Design feedback,", "Client reviews,", "Sound picks,", "Code reviews,", "Creative decisions,"];
 const SEQ_INTERVAL = 800; // ms per word
 
 function RotatingWord({ started, skipAnim }: { started: boolean; skipAnim: boolean }) {
@@ -479,7 +479,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
         {isCtaSlide ? (
           <div className="w-[340px] xl:w-[380px] h-[480px] xl:h-[520px] rounded-2xl border border-border/40 bg-card shadow-lg flex flex-col items-center justify-center text-center p-8 gap-4">
             <h3 className="text-xl font-semibold">Your turn</h3>
-            <p className="text-sm text-muted-foreground">Share designs, videos, briefs, or tracks and see which idea wins.</p>
+            <p className="text-sm text-muted-foreground">Share anything — designs, code, music, docs — and let your team vote.</p>
             <button onClick={onCta} className="mt-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:brightness-110 transition flex items-center gap-2">
               Share your designs <ArrowRight className="h-4 w-4" />
             </button>
@@ -927,8 +927,8 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             {/* 2. Description */}
             <StaggerIn show={introDone} delay={3600} skip={isReturning}>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl mt-6 mx-auto leading-relaxed">
-                Share designs, videos, briefs, or tracks — collect
-                votes and see which idea wins.
+                Share anything — designs, code, music, docs — and let
+                your team vote on what ships.
               </p>
             </StaggerIn>
 
@@ -936,7 +936,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             <StaggerIn show={introDone} delay={4200} skip={isReturning}>
               <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center items-center">
                 <Button onClick={handleCta} className="h-14 px-10 text-lg w-full sm:w-auto">
-                  Share your designs <ArrowRight className="ml-2 h-5 w-5" />
+                  Share something <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button variant="outline" className="h-14 px-10 text-lg w-full sm:w-auto" asChild>
                   <a href="#how-it-works">How it works</a>
@@ -1166,7 +1166,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           </div>
           <h2 className="text-xl font-medium mb-2">No polls yet</h2>
           <p className="text-muted-foreground mb-6 leading-relaxed">
-            Share your work, collect votes, and let the best design win.
+            Share your work, collect votes, and let the best idea win.
           </p>
           <Button size="lg" asChild>
             <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Share your first design</Link>
