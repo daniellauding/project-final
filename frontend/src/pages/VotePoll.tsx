@@ -643,7 +643,7 @@ const VotePoll = () => {
             <div className="flex-1 overflow-y-auto p-4">
               {panel === "results" && (
                 <div className="space-y-0.5">
-                  {sortedResults.map((r) => (
+                  {sortedResults.map((r, i) => (
                     <button
                       key={r.originalIndex}
                       onClick={() => { setCurrent(r.originalIndex); setPanel(null); }}
@@ -655,10 +655,10 @@ const VotePoll = () => {
                         </span>
                         <span className="text-[10px] text-muted-foreground/60 shrink-0">{r.percentage}%</span>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-0.5 mt-1">
+                      <div className="w-full bg-muted rounded-full h-1 mt-1">
                         <div
-                          className="h-0.5 rounded-full transition-all bg-foreground/20"
-                          style={{ width: `${r.percentage}%` }}
+                          className="h-1 rounded-full transition-all bg-primary"
+                          style={{ width: `${r.percentage}%`, opacity: i === 0 ? 1 : i === 1 ? 0.6 : 0.3 }}
                         />
                       </div>
                     </button>
