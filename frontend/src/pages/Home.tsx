@@ -185,6 +185,138 @@ function RotatingWord() {
   );
 }
 
+/* ── Step 1 illustration: two cards switching ── */
+function CardStack() {
+  const [front, setFront] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setFront((f) => (f + 1) % 2), 2800);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="relative w-full aspect-[4/3] flex items-center justify-center">
+      {[0, 1].map((i) => {
+        const isFront = front === i;
+        const tilt = i === 0 ? "-rotate-3" : "rotate-3";
+        return (
+          <div
+            key={i}
+            className={`absolute w-[70%] aspect-[3/4] rounded-xl border border-border/60 bg-card shadow-lg transition-all duration-700 ease-in-out ${tilt} ${
+              isFront
+                ? "z-10 scale-100 opacity-100 translate-y-0"
+                : "z-0 scale-95 opacity-60 translate-y-3"
+            }`}
+          >
+            <div className="w-full h-full rounded-xl bg-muted/60 flex items-center justify-center overflow-hidden">
+              <div className={`text-xs font-medium text-muted-foreground/40 uppercase tracking-wider`}>
+                {i === 0 ? "Option A" : "Option B"}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Step 2 illustration: animated voting bars ── */
+function VotingBars() {
+  const [animate, setAnimate] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setAnimate(true); obs.unobserve(el); } },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const bars = [
+    { pct: 52, color: "bg-primary" },
+    { pct: 31, color: "bg-primary/60" },
+    { pct: 17, color: "bg-primary/30" },
+  ];
+
+  return (
+    <div ref={ref} className="w-full aspect-[4/3] rounded-2xl bg-muted/60 border border-border/40 flex flex-col justify-center px-8 gap-4">
+      {bars.map((bar, i) => (
+        <div key={i} className="space-y-1.5">
+          <div className="flex justify-between text-xs text-muted-foreground/60">
+            <span>Option {String.fromCharCode(65 + i)}</span>
+            <span>{animate ? bar.pct : 0}%</span>
+          </div>
+          <div className="h-3 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full rounded-full ${bar.color} transition-all ease-out`}
+              style={{
+                width: animate ? `${bar.pct}%` : "0%",
+                transitionDuration: `${800 + i * 300}ms`,
+                transitionDelay: `${i * 200}ms`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Step 3 illustration: animated checkmark ── */
+function DecideIllustration() {
+  const [animate, setAnimate] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setAnimate(true); obs.unobserve(el); } },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="w-full aspect-[4/3] rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center">
+      <svg viewBox="0 0 120 120" className="w-24 h-24">
+        <circle
+          cx="60" cy="60" r="50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          className="text-primary/20"
+        />
+        <circle
+          cx="60" cy="60" r="50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeDasharray="314"
+          strokeDashoffset={animate ? "0" : "314"}
+          strokeLinecap="round"
+          className="text-primary transition-all duration-1000 ease-out"
+          style={{ transitionDelay: "200ms" }}
+          transform="rotate(-90 60 60)"
+        />
+        <path
+          d="M38 62 L52 76 L82 46"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="70"
+          strokeDashoffset={animate ? "0" : "70"}
+          className="text-primary transition-all duration-700 ease-out"
+          style={{ transitionDelay: "600ms" }}
+        />
+      </svg>
+    </div>
+  );
+}
+
 /* ── Steps ── */
 const steps = [
   { icon: ImagePlus, title: "Share", desc: "Upload images, Figma embeds, or video. Compare iterations side by side." },
@@ -242,74 +374,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             </div>
           </section>
 
-          {/* How it works — left/right blocks */}
-          <section id="how-it-works" className="border-t border-border/60">
-            {/* Share */}
-            <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
-              <FadeIn>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-                  <div>
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 1</span>
-                    <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Share your options</h2>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Upload images, video, or audio. Paste a Figma, YouTube, or CodePen link.
-                      Compare iterations side by side — v1 vs v2 vs v3.
-                      Set visibility to public, unlisted, or private.
-                    </p>
-                  </div>
-                  <div className="aspect-[4/3] rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center">
-                    <ImagePlus className="h-8 w-8 text-muted-foreground/20" />
-                  </div>
-                </div>
-              </FadeIn>
-            </div>
-
-            {/* Vote */}
-            <div className="border-t border-border/40">
-              <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
-                <FadeIn>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-                    <div className="aspect-[4/3] rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center order-2 md:order-1">
-                      <MousePointerClick className="h-8 w-8 text-muted-foreground/20" />
-                    </div>
-                    <div className="order-1 md:order-2">
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 2</span>
-                      <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Collect votes</h2>
-                      <p className="text-muted-foreground leading-relaxed">
-                        Share a link — anyone can vote with one tap, on any device.
-                        Enable anonymous voting for honest feedback.
-                        Protect sensitive polls with a password.
-                      </p>
-                    </div>
-                  </div>
-                </FadeIn>
-              </div>
-            </div>
-
-            {/* Decide */}
-            <div className="border-t border-border/40">
-              <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
-                <FadeIn>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-                    <div>
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 3</span>
-                      <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Decide with clarity</h2>
-                      <p className="text-muted-foreground leading-relaxed">
-                        See results instantly — percentages, comments, and a clear winner.
-                        Remix any poll to explore new variations.
-                        No more "let's circle back" — just data.
-                      </p>
-                    </div>
-                    <div className="aspect-[4/3] rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center">
-                      <BarChart3 className="h-8 w-8 text-muted-foreground/20" />
-                    </div>
-                  </div>
-                </FadeIn>
-              </div>
-            </div>
-          </section>
-
-          {/* Preview polls */}
+          {/* Recent polls (shown before How it works if available) */}
           {polls.length > 0 && (
             <section className="border-t border-border/60 py-16 px-4">
               <div className="container mx-auto max-w-5xl">
@@ -343,22 +408,85 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             </section>
           )}
 
-          {/* CTA bottom */}
+          {/* CTA */}
           <section className="border-t border-border/60 py-20 px-4 text-center">
             <FadeIn>
               <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Ready to pejla?</h2>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                 Free forever. Create your first poll in 30 seconds.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" onClick={handleCta}>
-                  {user ? "Create a poll" : "Create free account"} <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button size="lg" variant="ghost" asChild>
-                  <Link to="/about">Learn more</Link>
-                </Button>
+              <Button size="lg" onClick={handleCta}>
+                Create a poll <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <div className="mt-4">
+                <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  How it works
+                </a>
               </div>
             </FadeIn>
+          </section>
+
+          {/* How it works — left/right blocks */}
+          <section id="how-it-works" className="border-t border-border/60">
+            {/* Share */}
+            <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
+              <FadeIn>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 1</span>
+                    <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Share your options</h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Upload images, video, or audio. Paste a Figma, YouTube, or CodePen link.
+                      Compare iterations side by side — v1 vs v2 vs v3.
+                      Set visibility to public, unlisted, or private.
+                    </p>
+                  </div>
+                  <CardStack />
+                </div>
+              </FadeIn>
+            </div>
+
+            {/* Vote */}
+            <div className="border-t border-border/40">
+              <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
+                <FadeIn>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
+                    <div className="order-2 md:order-1">
+                      <VotingBars />
+                    </div>
+                    <div className="order-1 md:order-2">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 2</span>
+                      <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Collect votes</h2>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Share a link — anyone can vote with one tap, on any device.
+                        Enable anonymous voting for honest feedback.
+                        Protect sensitive polls with a password.
+                      </p>
+                    </div>
+                  </div>
+                </FadeIn>
+              </div>
+            </div>
+
+            {/* Decide */}
+            <div className="border-t border-border/40">
+              <div className="container mx-auto max-w-5xl px-4 py-16 md:py-24">
+                <FadeIn>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 3</span>
+                      <h2 className="text-2xl md:text-3xl tracking-tight mt-2 mb-3">Decide with clarity</h2>
+                      <p className="text-muted-foreground leading-relaxed">
+                        See results instantly — percentages, comments, and a clear winner.
+                        Remix any poll to explore new variations.
+                        No more "let's circle back" — just data.
+                      </p>
+                    </div>
+                    <DecideIllustration />
+                  </div>
+                </FadeIn>
+              </div>
+            </div>
           </section>
         </div>
 
