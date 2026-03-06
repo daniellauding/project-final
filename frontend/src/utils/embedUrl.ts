@@ -19,12 +19,26 @@ const EMBEDDABLE_DOMAINS = [
   "stackblitz.com",
   "replit.com",
   "lovable.dev",
+  "lovable.app",
+  "v0.dev",
+  "bolt.new",
+  "val.town",
+  "webcontainer.io",
+  "csb.app",
+  "githubpreview.dev",
   "vercel.app",
   "netlify.app",
   "github.io",
   "gitlab.io",
   "surge.sh",
   "render.com",
+  "railway.app",
+  "fly.dev",
+  "pages.dev",
+  "workers.dev",
+  "deno.dev",
+  "figma.com",
+  "www.figma.com",
 ];
 
 /**
@@ -94,6 +108,12 @@ export function toEmbedUrl(url: string): string | null {
     // Spotify
     if (u.hostname === "open.spotify.com") {
       return url.replace("open.spotify.com", "open.spotify.com/embed");
+    }
+
+    // Figma (proto, design, board) — skip if already an embed URL
+    if (u.hostname === "www.figma.com" || u.hostname === "figma.com") {
+      if (u.pathname === "/embed") return url;
+      return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(url)}`;
     }
 
     // Known embeddable domains — return as-is
