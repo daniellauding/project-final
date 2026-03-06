@@ -464,7 +464,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
       `}</style>
       {/* Header: label + arrows */}
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-sm font-medium text-foreground">Recent designs</span>
+        <span className="text-sm font-medium text-foreground">Recent</span>
         <div className="flex gap-1.5">
           <button onClick={prev} className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Previous">
             <ChevronLeft className="h-3.5 w-3.5" />
@@ -481,7 +481,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
             <h3 className="text-xl font-semibold">Your turn</h3>
             <p className="text-sm text-muted-foreground">Share anything — designs, code, music, docs — and let your team vote.</p>
             <button onClick={onCta} className="mt-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:brightness-110 transition flex items-center gap-2">
-              Share your designs <ArrowRight className="h-4 w-4" />
+              Share something <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         ) : (
@@ -730,7 +730,7 @@ function LoopingThumbnail({ options, className, getOptionMedia }: { options: any
   );
 }
 
-/* ── Recent designs — single stacked card, swap like pulling from a deck ── */
+/* ── Recent — single stacked card, swap like pulling from a deck ── */
 function RecentPollsCarousel({ polls, getThumbnail, getOptionMedia }: { polls: any[]; getThumbnail: (p: any) => string | null; getOptionMedia: (opt: any) => { thumb: string | null; type: string } }) {
   const [current, setCurrent] = useState(0);
   const maxVisible = 5;
@@ -746,7 +746,7 @@ function RecentPollsCarousel({ polls, getThumbnail, getOptionMedia }: { polls: a
       `}</style>
       {/* Header */}
       <div className="flex items-center justify-center gap-3 mb-8">
-        <h2 className="text-xl md:text-2xl">Recent designs</h2>
+        <h2 className="text-xl md:text-2xl">Recent</h2>
         <div className="flex gap-1.5">
           <button onClick={prev}
             className="p-1.5 rounded-full border border-border bg-background hover:bg-secondary transition" aria-label="Previous">
@@ -980,10 +980,10 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             <FadeIn>
               <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Ready to pejla?</h2>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Free forever. Get your first design feedback in 30 seconds.
+                Free forever. Get your first feedback in 30 seconds.
               </p>
               <Button size="lg" onClick={handleCta}>
-                Share your designs <ArrowRight className="ml-2 h-4 w-4" />
+                Share something <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <div className="mt-4">
                 <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -1184,7 +1184,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             Share your work, collect votes, and let the best idea win.
           </p>
           <Button size="lg" asChild>
-            <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Share your first design</Link>
+            <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Get started</Link>
           </Button>
         </div>
       )}
