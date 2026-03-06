@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
 import {
-  PlusCircle, ArrowRight, ImagePlus, MousePointerClick, BarChart3
+  PlusCircle, ArrowRight, ImagePlus, MousePointerClick, BarChart3, Lock
 } from "lucide-react";
 import AuthModal from "../components/AuthModal";
 
@@ -317,51 +317,78 @@ function DecideIllustration() {
   );
 }
 
-/* ── Floating cursors ── */
-const cursorPath = "M4.5 2.1c-.2-.3-.6-.3-.8 0L.3 13.7c-.2.5.2 1 .7.8l4.1-1.6c.2-.1.4-.1.5 0l4.1 1.6c.5.2 1-.3.7-.8L7 2.1c-.1-.2-.3-.3-.5-.3h-2z";
-
-const cursors = [
-  { x: "12%", y: "18%", color: "#f9a8d4", delay: 0, scale: 1.1 },
-  { x: "82%", y: "14%", color: "#93c5fd", delay: 1.2, scale: 0.9 },
-  { x: "88%", y: "55%", color: "#86efac", delay: 2.4, scale: 1 },
-  { x: "8%",  y: "62%", color: "#c4b5fd", delay: 0.8, scale: 0.85 },
-  { x: "72%", y: "75%", color: "#fcd34d", delay: 1.8, scale: 0.75 },
-  { x: "25%", y: "78%", color: "#fca5a5", delay: 3, scale: 0.7 },
-];
-
+/* ── Floating cursors (Figma-live style) ── */
 function FloatingCursors() {
   return (
     <>
       <style>{`
-        @keyframes cursor-float {
-          0%, 100% { transform: translate(0, 0); }
-          25% { transform: translate(3px, -6px); }
-          50% { transform: translate(-2px, -10px); }
-          75% { transform: translate(4px, -4px); }
+        @keyframes cursor-1 {
+          0%   { left: 8%;  top: 22%; }
+          15%  { left: 18%; top: 30%; }
+          30%  { left: 25%; top: 18%; }
+          40%  { left: 25%; top: 18%; transform: scale(0.85); }
+          45%  { left: 25%; top: 18%; transform: scale(1); }
+          60%  { left: 14%; top: 45%; }
+          80%  { left: 10%; top: 35%; }
+          100% { left: 8%;  top: 22%; }
         }
-        @keyframes cursor-click {
-          0%, 70%, 100% { transform: scale(1); opacity: 0.5; }
-          80% { transform: scale(0.8); opacity: 0.7; }
-          90% { transform: scale(1.1); opacity: 0.6; }
+        @keyframes cursor-2 {
+          0%   { left: 78%; top: 16%; }
+          20%  { left: 70%; top: 35%; }
+          35%  { left: 65%; top: 28%; }
+          45%  { left: 65%; top: 28%; transform: scale(0.85); }
+          50%  { left: 65%; top: 28%; transform: scale(1); }
+          65%  { left: 75%; top: 50%; }
+          85%  { left: 82%; top: 30%; }
+          100% { left: 78%; top: 16%; }
+        }
+        @keyframes cursor-3 {
+          0%   { left: 55%; top: 65%; }
+          20%  { left: 40%; top: 55%; }
+          40%  { left: 35%; top: 68%; }
+          55%  { left: 35%; top: 68%; transform: scale(0.85); }
+          60%  { left: 35%; top: 68%; transform: scale(1); }
+          75%  { left: 50%; top: 72%; }
+          100% { left: 55%; top: 65%; }
+        }
+        @keyframes click-ring {
+          0%, 35%, 100% { opacity: 0; transform: scale(0); }
+          40% { opacity: 0.5; transform: scale(0.5); }
+          55% { opacity: 0; transform: scale(1.5); }
         }
       `}</style>
-      {cursors.map((c, i) => (
-        <svg
-          key={i}
-          viewBox="0 0 12 16"
+      {[
+        { anim: "cursor-1", dur: "8s",  delay: "0s",   color: "#f9a8d4", label: "Anna" },
+        { anim: "cursor-2", dur: "9s",  delay: "1.5s", color: "#93c5fd", label: "Erik" },
+        { anim: "cursor-3", dur: "10s", delay: "3s",   color: "#86efac", label: "Sara" },
+      ].map((c) => (
+        <div
+          key={c.anim}
           className="absolute pointer-events-none"
           style={{
-            left: c.x,
-            top: c.y,
-            width: `${c.scale * 28}px`,
-            height: `${c.scale * 36}px`,
-            opacity: 0.45,
-            animation: `cursor-float ${5 + i * 0.7}s ease-in-out infinite, cursor-click ${3.6 + i * 0.4}s ease-in-out ${c.delay}s infinite`,
-            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.08))",
+            animation: `${c.anim} ${c.dur} cubic-bezier(0.4, 0, 0.2, 1) ${c.delay} infinite`,
+            filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.06))",
           }}
         >
-          <path d={cursorPath} fill={c.color} />
-        </svg>
+          <div className="relative">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M5.65 1.15a.5.5 0 0 0-.65.48v20.74a.5.5 0 0 0 .85.36l5.6-5.6h8.92a.5.5 0 0 0 .35-.85L5.65 1.15Z" fill={c.color} />
+            </svg>
+            <div
+              className="absolute top-0 left-0 w-6 h-6 rounded-full -translate-x-1/4 -translate-y-1/4"
+              style={{
+                backgroundColor: c.color,
+                animation: `click-ring ${c.dur} cubic-bezier(0.4, 0, 0.2, 1) ${c.delay} infinite`,
+              }}
+            />
+          </div>
+          <span
+            className="text-[9px] font-medium rounded px-1 py-0.5 ml-3 -mt-0.5 whitespace-nowrap"
+            style={{ backgroundColor: c.color, color: "#fff" }}
+          >
+            {c.label}
+          </span>
+        </div>
       ))}
     </>
   );
@@ -426,13 +453,13 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           </section>
 
           {/* Recent polls (shown before How it works if available) */}
-          {polls.length > 0 && (
+          {polls.filter((p) => !p.visibility || p.visibility === "public").length > 0 && (
             <section className="border-t border-border/60 py-16 px-4">
               <div className="container mx-auto max-w-5xl">
                 <FadeIn>
                   <h2 className="text-xl md:text-2xl text-center mb-10">Recent polls</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {polls.slice(0, 3).map((poll) => {
+                    {polls.filter((p) => !p.visibility || p.visibility === "public").slice(0, 3).map((poll) => {
                       const thumb = getThumbnail(poll);
                       return (
                         <Link key={poll._id} to={`/poll/${poll.shareId}`}
@@ -548,7 +575,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
 
   // Logged-in: poll feed
   return (
-    <div className="container mx-auto p-4 py-8">
+    <div className="container mx-auto p-4 pt-20 pb-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl">Welcome back{user.username ? `, ${user.username}` : ""}</h1>
@@ -579,7 +606,13 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                         <span className="text-2xl font-bold text-muted-foreground/20">{poll.options.length} opt.</span>
                       </div>
                     )}
-                    <div className="absolute bottom-2 right-2">
+                    <div className="absolute bottom-2 right-2 flex gap-1">
+                      {poll.password && (
+                        <Badge variant="outline" className="text-[10px] bg-background/80 backdrop-blur-sm flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> protected</Badge>
+                      )}
+                      {poll.visibility && poll.visibility !== "public" && (
+                        <Badge variant="outline" className="text-[10px] bg-background/80 backdrop-blur-sm">{poll.visibility}</Badge>
+                      )}
                       <Badge variant="secondary" className="text-xs">{poll.totalVotes || 0} votes</Badge>
                     </div>
                   </div>

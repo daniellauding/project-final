@@ -24,6 +24,7 @@ interface Poll {
   results?: PollOption[];
   status: string;
   visibility?: string;
+  password?: string;
   createdAt: string;
 }
 
