@@ -203,11 +203,10 @@ h4, h5, h6 {
   color: inherit;
 }
 
-/* Heading font on primary & secondary buttons */
-[data-slot="button"][data-variant="default"],
-[data-slot="button"][data-variant="secondary"] {
-  font-family: "Exposure Trial", "Apercu", system-ui, sans-serif;
-  letter-spacing: -0.02em;
+/* Buttons use body font for readability */
+[data-slot="button"] {
+  font-family: "Apercu", system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 /* Hide scrollbar but keep scrolling */
