@@ -192,25 +192,30 @@ function CardStack() {
     const t = setInterval(() => setFront((f) => (f + 1) % 2), 2800);
     return () => clearInterval(t);
   }, []);
+  const images = ["/how/01.png", "/how/02.png"];
+  const images2x = ["/how/01@2x.png", "/how/02@2x.png"];
   return (
-    <div className="relative w-full aspect-[4/3] flex items-center justify-center">
+    <div className="relative w-full aspect-[3/4] max-w-sm mx-auto flex items-center justify-center">
       {[0, 1].map((i) => {
         const isFront = front === i;
         const tilt = i === 0 ? "-rotate-3" : "rotate-3";
         return (
           <div
             key={i}
-            className={`absolute w-[70%] aspect-[3/4] rounded-xl border border-border/60 bg-card shadow-lg transition-all duration-700 ease-in-out ${tilt} ${
+            className={`absolute w-[80%] aspect-[3/4] rounded-2xl border border-border/60 bg-card shadow-lg transition-all duration-700 ease-in-out overflow-hidden ${tilt} ${
               isFront
                 ? "z-10 scale-100 opacity-100 translate-y-0"
                 : "z-0 scale-95 opacity-60 translate-y-3"
             }`}
           >
-            <div className="w-full h-full rounded-xl bg-muted/60 flex items-center justify-center overflow-hidden">
-              <div className={`text-xs font-medium text-muted-foreground/40 uppercase tracking-wider`}>
-                {i === 0 ? "Option A" : "Option B"}
-              </div>
-            </div>
+            <img
+              src={images[i]}
+              srcSet={`${images[i]} 960w, ${images2x[i]} 1920w`}
+              sizes="300px"
+              alt={`Option ${i === 0 ? "A" : "B"}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
         );
       })}
@@ -519,14 +524,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                       Set visibility to public, unlisted, or private.
                     </p>
                   </div>
-                  <img
-                    src="/how/01.png"
-                    srcSet="/how/01.png 960w, /how/01@2x.png 1920w"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    alt="Share your options — upload images, paste links, compare side by side"
-                    className="w-full max-w-sm mx-auto rounded-2xl border border-border/40 shadow-lg"
-                    loading="lazy"
-                  />
+                  <CardStack />
                 </div>
               </FadeIn>
             </div>
@@ -537,14 +535,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                 <FadeIn>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
                     <div className="order-2 md:order-1">
-                  <img
-                    src="/how/02.png"
-                    srcSet="/how/02.png 960w, /how/02@2x.png 1920w"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    alt="Collect votes — one-tap voting on any device"
-                    className="w-full max-w-sm mx-auto rounded-2xl border border-border/40 shadow-lg"
-                    loading="lazy"
-                  />
+                      <VotingBars />
                     </div>
                     <div className="order-1 md:order-2">
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 2</span>
