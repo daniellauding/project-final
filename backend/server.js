@@ -195,18 +195,22 @@ app.get("/polls", async (req, res) => {
 
     const hideRemixes = !includeRemixes;
 
-    let filter = { status: "published" };
-    if (hideRemixes) filter.remixedFrom = null;
+    // Public feed: only published + public polls
+    const publicFilter = { status: "published", visibility: { $nin: ["private", "unlisted"] } };
+    if (hideRemixes) publicFilter.remixedFrom = null;
+
+    let filter = publicFilter;
 
     const token = req.header("Authorization");
     if (token) {
       const user = await User.findOne({ accessToken: token });
       if (user) {
+        // Logged-in users also see their own polls (any visibility)
         const myFilter = { creator: user._id };
         if (hideRemixes) myFilter.remixedFrom = null;
         filter = {
           $or: [
-            { status: "published", ...(hideRemixes ? { remixedFrom: null } : {}) },
+            publicFilter,
             myFilter
           ]
         };
@@ -297,7 +301,7 @@ app.get("/polls/:shareId", async (req, res) => {
 // Create poll
 app.post("/polls", authenticateUser, async (req, res) => {
   try {
-    const { title, description, options, status, allowAnonymousVotes } = req.body;
+    const { title, description, options, status, allowAnonymousVotes, visibility, password, showWinner, deadline, allowRemix } = req.body;
 
     const poll = new Poll({
       title,
@@ -305,6 +309,11 @@ app.post("/polls", authenticateUser, async (req, res) => {
       options,
       status: status || "published",
       allowAnonymousVotes: allowAnonymousVotes || false,
+      visibility: visibility || "public",
+      password: password || "",
+      showWinner: showWinner !== undefined ? showWinner : true,
+      deadline: deadline || null,
+      allowRemix: allowRemix !== undefined ? allowRemix : true,
       creator: req.user._id,
       creatorName: req.user.username
     });

@@ -16,6 +16,7 @@ interface Poll {
   totalVotes: number;
   results: ResultOption[];
   shareId: string;
+  showWinner?: boolean;
 }
 
 const Results = () => {
@@ -52,6 +53,7 @@ const Results = () => {
   }
 
   const maxVotes = Math.max(...poll.results.map((r) => r.voteCount));
+  const showWinner = poll.showWinner !== false;
 
   return (
     <div className="container mx-auto p-4 py-8 max-w-2xl">
@@ -73,13 +75,13 @@ const Results = () => {
             <div className="flex items-center justify-between">
               <span
                 className={`font-medium ${
-                  opt.voteCount === maxVotes && poll.totalVotes > 0
+                  showWinner && opt.voteCount === maxVotes && poll.totalVotes > 0
                     ? "text-primary"
                     : ""
                 }`}
               >
                 {opt.label}
-                {opt.voteCount === maxVotes && poll.totalVotes > 0 && " — Leader!"}
+                {showWinner && opt.voteCount === maxVotes && poll.totalVotes > 0 && " — Leader!"}
               </span>
               <span className="text-sm text-muted-foreground">
                 {opt.voteCount} ({opt.percentage}%)
@@ -88,7 +90,7 @@ const Results = () => {
             <div className="w-full bg-secondary rounded-full h-4">
               <div
                 className={`h-4 rounded-full transition-all duration-700 ${
-                  opt.voteCount === maxVotes && poll.totalVotes > 0
+                  showWinner && opt.voteCount === maxVotes && poll.totalVotes > 0
                     ? "bg-primary"
                     : "bg-primary/60"
                 }`}

@@ -410,6 +410,7 @@ const VotePoll = () => {
   const sortedResults = [...poll.results]
     .map((r, i) => ({ ...r, originalIndex: i }))
     .sort((a, b) => b.voteCount - a.voteCount);
+  const showWinner = poll.showWinner !== false;
 
   const multiSlide = poll.results.length > 1;
 
@@ -658,7 +659,7 @@ const VotePoll = () => {
                       <div className="w-full bg-muted rounded-full h-1 mt-1">
                         <div
                           className="h-1 rounded-full transition-all bg-primary"
-                          style={{ width: `${r.percentage}%`, opacity: i === 0 ? 1 : i === 1 ? 0.6 : 0.3 }}
+                          style={{ width: `${r.percentage}%`, opacity: showWinner ? (i === 0 ? 1 : i === 1 ? 0.6 : 0.3) : 0.6 }}
                         />
                       </div>
                     </button>
