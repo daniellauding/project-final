@@ -8,6 +8,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
 import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound, Clipboard, X } from "lucide-react";
+import { Progress } from "../components/ui/progress";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { toast } from "sonner";
 
@@ -30,8 +31,11 @@ const EditPoll = () => {
   const [pollId, setPollId] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<Set<number>>(new Set());
+  const [uploadProgress, setUploadProgress] = useState<Map<number, number>>(new Map());
+  const abortMapRef = useRef<Map<number, () => void>>(new Map());
   const [activeCard, setActiveCard] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const optionsRef = useRef(options);
   optionsRef.current = options;
@@ -96,18 +100,33 @@ const EditPoll = () => {
   const handleFileUpload = async (index: number, file: File) => {
     claimedRef.current.add(index);
     setUploading((prev) => new Set(prev).add(index));
+    setUploadProgress((prev) => new Map(prev).set(index, 0));
+
+    const { promise, abort } = pollApi.uploadWithProgress(file, ({ percent }) => {
+      setUploadProgress((prev) => new Map(prev).set(index, percent));
+    });
+    abortMapRef.current.set(index, abort);
+
     try {
-      const data = await pollApi.upload(file);
+      const data = await promise;
       if (data.fileType === "video") updateOption(index, { videoUrl: data.url });
       else if (data.fileType === "audio") updateOption(index, { audioUrl: data.url });
       else if (data.fileType === "file") updateOption(index, { fileUrl: data.url, fileName: file.name });
       else updateOption(index, { imageUrl: data.url || data.imageUrl });
-    } catch {
-      toast("Upload failed");
+    } catch (err: any) {
+      if (err?.message !== "Upload cancelled") toast("Upload failed");
     } finally {
       claimedRef.current.delete(index);
+      abortMapRef.current.delete(index);
       setUploading((prev) => { const next = new Set(prev); next.delete(index); return next; });
+      setUploadProgress((prev) => { const next = new Map(prev); next.delete(index); return next; });
     }
+  };
+
+  const cancelUpload = (index: number) => {
+    const abort = abortMapRef.current.get(index);
+    if (abort) abort();
+    toast("Upload cancelled");
   };
 
   const uploadRef = useRef(handleFileUpload);
@@ -270,23 +289,33 @@ const EditPoll = () => {
         </div>
 
         {/* Password */}
-        {visibility !== "private" && (
-          <div className="space-y-2">
-            <Label htmlFor="password" className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4" />
-              Password (optional)
-            </Label>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            Password (optional)
+          </Label>
+          <div className="relative">
             <Input
               id="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Leave empty for no password"
+              className="pr-10"
             />
-            <p className="text-xs text-muted-foreground">
-              Requires password to view and vote
-            </p>
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
-        )}
+          <p className="text-xs text-muted-foreground">
+            Requires password to view and vote
+          </p>
+        </div>
 
         {/* Poll settings */}
         <div className="space-y-3 rounded-lg border p-4">
@@ -404,9 +433,10 @@ const EditPoll = () => {
                     </Button>
                   </div>
                 ) : opt.audioUrl ? (
-                  <div className="relative p-3 bg-muted/60 rounded">
+                  <div className="relative p-3 bg-muted/60 rounded flex flex-col items-center gap-2">
+                    <span className="text-2xl">🎵</span>
                     <audio src={opt.audioUrl} controls className="w-full" onClick={(e) => e.stopPropagation()} />
-                    <Button type="button" variant="destructive" size="sm" className="mt-2" onClick={(e) => { e.stopPropagation(); updateOption(i, { audioUrl: "" }); }}>
+                    <Button type="button" variant="destructive" size="sm" className="mt-1" onClick={(e) => { e.stopPropagation(); updateOption(i, { audioUrl: "" }); }}>
                       Remove
                     </Button>
                   </div>
@@ -416,7 +446,9 @@ const EditPoll = () => {
                       <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-40 rounded border-0" />
                     ) : (
                       <div className="p-4 bg-muted/60 rounded flex items-center gap-3">
-                        <span className="text-2xl">📄</span>
+                        <span className="inline-block px-2 py-1 rounded bg-muted-foreground/10 text-xs font-mono font-bold uppercase tracking-wide">
+                          {(opt.fileName || opt.fileUrl).split('.').pop()?.slice(0, 6) || "file"}
+                        </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{opt.fileName || "File"}</p>
                           <a href={opt.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">Open file</a>
@@ -452,16 +484,29 @@ const EditPoll = () => {
                         if (file) handleFileUpload(i, file);
                       }}
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); document.getElementById(`edit-file-${i}`)?.click(); }}
-                      disabled={uploading.has(i)}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {uploading.has(i) ? "Uploading..." : dragOver === i ? "Drop here" : "Drop or click to upload"}
-                    </Button>
+                    {uploading.has(i) ? (
+                      <div className="flex flex-col items-center gap-2 w-full">
+                        <Progress value={uploadProgress.get(i) ?? 0} className="w-full" />
+                        <span className="text-xs text-muted-foreground">{uploadProgress.get(i) ?? 0}%</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); cancelUpload(i); }}
+                          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+                        >
+                          <X className="h-3 w-3" /> Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); document.getElementById(`edit-file-${i}`)?.click(); }}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {dragOver === i ? "Drop here" : "Drop or click to upload"}
+                      </Button>
+                    )}
                   </div>
                 )}
 

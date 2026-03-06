@@ -7,7 +7,8 @@ import { Input } from "../components/ui/input";
 import {
   ChevronLeft, ChevronRight, Pencil, Trash2,
   MessageCircle, Share2, BarChart3, GitBranch, X,
-  LogIn, Flag, ThumbsUp, Info, Image as ImageIcon
+  LogIn, Flag, ThumbsUp, Info, Image as ImageIcon,
+  Eye, EyeOff, Lock, KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "../components/AuthModal";
@@ -52,6 +53,8 @@ interface Poll {
   deadline: string | null;
   remixes: RemixInfo[];
   remixedFrom: string | null;
+  visibility?: string;
+  password?: string;
 }
 
 type Panel = "results" | "comments" | "remixes" | "report" | "info" | null;
@@ -558,22 +561,37 @@ const VotePoll = () => {
 
       {/* Top-right — owner actions (below header area) */}
       {isOwner && (
-        <div className={`absolute top-14 right-3 z-10 flex gap-1 ${overlayClass}`}>
-          <Link
-            to={`/poll/${poll.shareId}/edit`}
-            state={{ backgroundLocation: location }}
-            className="p-2 rounded-full bg-background/80 hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Edit poll"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="p-2 rounded-full bg-background/80 hover:bg-destructive/10 border border-border text-destructive focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Delete poll"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+        <div className={`absolute top-14 right-3 z-10 flex flex-col items-end gap-1 ${overlayClass}`}>
+          <div className="flex gap-1">
+            <Link
+              to={`/poll/${poll.shareId}/edit`}
+              state={{ backgroundLocation: location }}
+              className="p-2 rounded-full bg-background/80 hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Edit poll"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Link>
+            <button
+              onClick={handleDelete}
+              className="p-2 rounded-full bg-background/80 hover:bg-destructive/10 border border-border text-destructive focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Delete poll"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="flex gap-1">
+            {poll.visibility && poll.visibility !== "public" && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/80 border border-border text-[10px] text-muted-foreground">
+                {poll.visibility === "private" ? <Lock className="h-2.5 w-2.5" /> : <EyeOff className="h-2.5 w-2.5" />}
+                {poll.visibility}
+              </span>
+            )}
+            {poll.password && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-background/80 border border-border text-[10px] text-muted-foreground">
+                <KeyRound className="h-2.5 w-2.5" /> password
+              </span>
+            )}
+          </div>
         </div>
       )}
 

@@ -5,12 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight, Check, Clipboard, ChevronDown } from "lucide-react";
+import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight, Check, Clipboard, ChevronDown, X } from "lucide-react";
+import { Progress } from "../components/ui/progress";
 import { toEmbedUrl } from "../utils/embedUrl";
 import { toast } from "sonner";
 
-const STEP_SLUGS = ["", "options", "publish"] as const;
-const STEP_LABELS = ["Question", "Options", "Publish"] as const;
+const STEP_SLUGS = ["", "question", "publish"] as const;
+const STEP_LABELS = ["Options", "Question", "Publish"] as const;
 
 function slugToStep(slug: string | undefined): number {
   if (!slug) return 0;
@@ -47,8 +48,11 @@ const CreatePoll = () => {
   const [visibility, setVisibility] = useState("public");
   const [password, setPassword] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [uploading, setUploading] = useState<Set<number>>(new Set());
+  const [uploadProgress, setUploadProgress] = useState<Map<number, number>>(new Map());
+  const abortMapRef = useRef<Map<number, () => void>>(new Map());
   const [activeCard, setActiveCard] = useState<number | null>(null);
   const activeCardRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -132,18 +136,33 @@ const CreatePoll = () => {
   const handleFileUpload = async (index: number, file: File) => {
     claimedRef.current.add(index);
     setUploading((prev) => new Set(prev).add(index));
+    setUploadProgress((prev) => new Map(prev).set(index, 0));
+
+    const { promise, abort } = pollApi.uploadWithProgress(file, ({ percent }) => {
+      setUploadProgress((prev) => new Map(prev).set(index, percent));
+    });
+    abortMapRef.current.set(index, abort);
+
     try {
-      const data = await pollApi.upload(file);
+      const data = await promise;
       if (data.fileType === "video") updateOption(index, { videoUrl: data.url });
       else if (data.fileType === "audio") updateOption(index, { audioUrl: data.url });
       else if (data.fileType === "file") updateOption(index, { fileUrl: data.url, fileName: file.name });
       else updateOption(index, { imageUrl: data.url || data.imageUrl });
-    } catch {
-      toast("Upload failed");
+    } catch (err: any) {
+      if (err?.message !== "Upload cancelled") toast("Upload failed");
     } finally {
       claimedRef.current.delete(index);
+      abortMapRef.current.delete(index);
       setUploading((prev) => { const next = new Set(prev); next.delete(index); return next; });
+      setUploadProgress((prev) => { const next = new Map(prev); next.delete(index); return next; });
     }
+  };
+
+  const cancelUpload = (index: number) => {
+    const abort = abortMapRef.current.get(index);
+    if (abort) abort();
+    toast("Upload cancelled");
   };
 
   // Refs so the global paste listener always sees latest state
@@ -155,7 +174,7 @@ const CreatePoll = () => {
 
   // Global paste: selected card → paste there; otherwise next empty; otherwise new card
   useEffect(() => {
-    if (step !== 1) return;
+    if (step !== 0) return;
 
     const isSlotEmpty = (o: typeof options[0], idx: number) =>
       !o.imageUrl && !o.videoUrl && !o.audioUrl && !o.embedUrl && !o.fileUrl && !claimedRef.current.has(idx);
@@ -219,7 +238,7 @@ const CreatePoll = () => {
 
   // Global drag-and-drop: route files to active/empty/new option (same logic as paste)
   useEffect(() => {
-    if (step !== 1) return;
+    if (step !== 0) return;
 
     const isSlotEmpty = (o: typeof options[0], idx: number) =>
       !o.imageUrl && !o.videoUrl && !o.audioUrl && !o.embedUrl && !o.fileUrl && !claimedRef.current.has(idx);
@@ -258,7 +277,7 @@ const CreatePoll = () => {
     setSubmitting(true);
     try {
       const data = await pollApi.create({
-        title, description,
+        title: autoTitle(), description,
         options: options.map((opt) => ({
           label: opt.label, imageUrl: opt.imageUrl, videoUrl: opt.videoUrl,
           audioUrl: opt.audioUrl, externalUrl: "", embedUrl: opt.embedUrl,
@@ -270,7 +289,7 @@ const CreatePoll = () => {
         allowRemix,
         showWinner,
         ...(deadline ? { deadline } : {}),
-        ...(visibility === "private" && password ? { password } : {}),
+        ...(password ? { password } : {}),
       });
       if (data.success) navigate(`/poll/${data.poll.shareId}`);
     } catch {
@@ -282,14 +301,21 @@ const CreatePoll = () => {
 
   const hasMedia = (opt: typeof options[0]) => opt.imageUrl || opt.videoUrl || opt.audioUrl || opt.fileUrl;
   const filledOptions = options.filter((o) => o.label.trim());
-  const canNextFromStep0 = title.trim().length >= 3;
-  const canNextFromStep1 = filledOptions.length >= 2;
-  const canPublish = canNextFromStep0 && canNextFromStep1 && (visibility !== "private" || password.length >= 3);
+  const canNextFromStep0 = filledOptions.length >= 2;
+  const canNextFromStep1 = true; // title is optional, auto-filled if empty
+  const canPublish = canNextFromStep0;
+
+  const autoTitle = () => {
+    if (title.trim().length >= 3) return title;
+    const labels = options.map((o) => o.label.trim()).filter(Boolean);
+    if (labels.length >= 2) return `${labels[0]} vs ${labels[1]}${labels.length > 2 ? ` + ${labels.length - 2} more` : ""}`;
+    return "My poll";
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col">
       {/* Step indicator */}
-      <div className="border-b border-border/60 bg-card/50">
+      <div className="sticky top-0 z-20 border-b border-border/60 bg-card/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-1 md:gap-2 max-w-lg mx-auto">
             {STEP_LABELS.map((s, i) => (
@@ -298,8 +324,8 @@ const CreatePoll = () => {
                 type="button"
                 onClick={() => {
                   if (i === 0) goToStep(0);
-                  if (i === 1 && canNextFromStep0) goToStep(1);
-                  if (i === 2 && canNextFromStep0 && canNextFromStep1) goToStep(2);
+                  if (i === 1) goToStep(1);
+                  if (i === 2 && canNextFromStep0) goToStep(2);
                 }}
                 className="flex items-center gap-2 flex-1 group"
               >
@@ -326,45 +352,8 @@ const CreatePoll = () => {
 
       {/* Step content */}
       <div className="flex-1 flex flex-col">
-        {/* Step 0: Question */}
+        {/* Step 0: Options — horizontal scroll */}
         {step === 0 && (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg space-y-6">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl md:text-3xl tracking-tight">
-                  {remixFrom ? "Remix a poll" : "What are you deciding?"}
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                  Give your poll a clear question so voters know what to focus on.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Input
-                  id="title" value={title} onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Which logo works best?"
-                  aria-label="Poll title"
-                  required minLength={3} maxLength={100}
-                  className="text-lg h-14 bg-card placeholder:text-foreground/25 rounded-xl"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter" && canNextFromStep0) { e.preventDefault(); goToStep(1); } }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Textarea
-                  id="desc" value={description} onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add context for voters (optional)"
-                  aria-label="Poll description"
-                  maxLength={500} rows={3}
-                  className="bg-card placeholder:text-foreground/25 rounded-xl"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 1: Options — horizontal scroll */}
-        {step === 1 && (
           <div className="flex-1 flex flex-col">
             <div className="text-center py-6 px-4">
               <h2 className="text-xl md:text-2xl tracking-tight">Add your options</h2>
@@ -401,7 +390,10 @@ const CreatePoll = () => {
                           <video src={opt.videoUrl} controls className="w-full h-48 bg-black" />
                         )}
                         {opt.audioUrl && (
-                          <div className="p-4 h-48 flex items-center bg-muted"><audio src={opt.audioUrl} controls className="w-full" /></div>
+                          <div className="p-4 h-48 flex flex-col items-center justify-center gap-2 bg-muted">
+                            <span className="text-2xl">🎵</span>
+                            <audio src={opt.audioUrl} controls className="w-full" />
+                          </div>
                         )}
                         {opt.fileUrl && (() => {
                           const isPdf = opt.fileUrl.toLowerCase().includes('.pdf');
@@ -409,7 +401,9 @@ const CreatePoll = () => {
                             <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-48 border-0" />
                           ) : (
                             <div className="p-4 h-48 flex flex-col items-center justify-center gap-2">
-                              <span className="text-2xl">📄</span>
+                              <span className="inline-block px-2 py-1 rounded bg-muted-foreground/10 text-xs font-mono font-bold uppercase tracking-wide">
+                                {(opt.fileName || opt.fileUrl).split('.').pop()?.slice(0, 6) || "file"}
+                              </span>
                               <p className="text-sm font-medium truncate max-w-full">{opt.fileName || "File"}</p>
                               <a href={opt.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline">Open file</a>
                             </div>
@@ -439,7 +433,17 @@ const CreatePoll = () => {
                         }}
                       >
                         {uploading.has(i) ? (
-                          <span className="text-sm text-muted-foreground">Uploading...</span>
+                          <div className="flex flex-col items-center gap-2 w-full px-6" onClick={(e) => e.preventDefault()}>
+                            <Progress value={uploadProgress.get(i) ?? 0} className="w-full" />
+                            <span className="text-xs text-muted-foreground">{uploadProgress.get(i) ?? 0}%</span>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelUpload(i); }}
+                              className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+                            >
+                              <X className="h-3 w-3" /> Cancel
+                            </button>
+                          </div>
                         ) : (
                           <>
                             <ImagePlus className="h-8 w-8 text-muted-foreground/60 mb-2" />
@@ -509,6 +513,48 @@ const CreatePoll = () => {
           </div>
         )}
 
+        {/* Step 1: Question */}
+        {step === 1 && (
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-2xl md:text-3xl tracking-tight">
+                  {remixFrom ? "Remix a poll" : "What are you deciding?"}
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Give your poll a clear question so voters know what to focus on.
+                </p>
+                {!title.trim() && (
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    Skip this and we'll auto-name it "{autoTitle()}"
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Input
+                  id="title" value={title} onChange={(e) => setTitle(e.target.value)}
+                  placeholder={autoTitle()}
+                  aria-label="Poll title"
+                  maxLength={100}
+                  className="text-lg h-14 bg-card placeholder:text-foreground/25 rounded-xl"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); goToStep(2); } }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Textarea
+                  id="desc" value={description} onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Add context for voters (optional)"
+                  aria-label="Poll description"
+                  maxLength={500} rows={3}
+                  className="bg-card placeholder:text-foreground/25 rounded-xl"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Step 2: Settings + Publish */}
         {step === 2 && (
           <div className="flex-1 flex items-center justify-center p-4">
@@ -516,7 +562,7 @@ const CreatePoll = () => {
               <div className="text-center mb-4">
                 <h2 className="text-2xl md:text-3xl tracking-tight">Almost there</h2>
                 <p className="text-muted-foreground mt-2 text-sm">
-                  {title} · {filledOptions.length} options
+                  {autoTitle()} · {filledOptions.length} options
                 </p>
               </div>
 
@@ -527,15 +573,12 @@ const CreatePoll = () => {
                   {([
                     { value: "public", icon: Eye, label: "Public", desc: "Visible to everyone" },
                     { value: "unlisted", icon: EyeOff, label: "Unlisted", desc: "Only via link" },
-                    { value: "private", icon: Lock, label: "Private", desc: "Requires password" },
+                    { value: "private", icon: Lock, label: "Private", desc: "Not listed anywhere" },
                   ] as const).map((v) => (
                     <button
                       key={v.value}
                       type="button"
-                      onClick={() => {
-                        setVisibility(v.value);
-                        if (v.value !== "private") setPassword("");
-                      }}
+                      onClick={() => setVisibility(v.value)}
                       className={`flex flex-col items-center gap-1.5 rounded-xl p-3 border transition-colors ${
                         visibility === v.value
                           ? "border-foreground bg-foreground text-background"
@@ -549,21 +592,27 @@ const CreatePoll = () => {
                   ))}
                 </div>
 
-                {visibility === "private" && (
-                  <div className="space-y-1.5 pt-1">
-                    <label htmlFor="poll-pw" className="text-sm">Set a password</label>
+                <div className="space-y-1.5 pt-1">
+                  <label htmlFor="poll-pw" className="text-sm">Password (optional)</label>
+                  <div className="relative">
                     <Input
                       id="poll-pw"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min 3 characters"
-                      minLength={3}
-                      className="bg-background placeholder:text-foreground/25"
-                      autoFocus
+                      placeholder="Require password to view"
+                      className="bg-background placeholder:text-foreground/25 pr-10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
-                )}
+                </div>
 
                 <label className="flex items-center justify-between cursor-pointer pt-2 border-t border-border/40">
                   <span className="text-sm">Allow anonymous voting</span>
@@ -623,11 +672,7 @@ const CreatePoll = () => {
               </Button>
               {!canPublish && (
                 <p className="text-xs text-destructive text-center">
-                  {!canNextFromStep0
-                    ? "Go back and add a title (min 3 characters)."
-                    : !canNextFromStep1
-                    ? "Go back and fill at least 2 option labels."
-                    : "Set a password (min 3 characters) for private polls."}
+                  Go back and fill at least 2 option labels.
                 </p>
               )}
             </div>
@@ -649,7 +694,7 @@ const CreatePoll = () => {
           {step < 2 ? (
             <Button
               onClick={() => goToStep(step + 1)}
-              disabled={step === 0 ? !canNextFromStep0 : !canNextFromStep1}
+              disabled={step === 0 ? !canNextFromStep0 : false}
             >
               Next <ArrowRight className="ml-1 h-4 w-4" />
             </Button>

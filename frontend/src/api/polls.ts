@@ -15,7 +15,9 @@ export const pollApi = {
   },
 
   getByShareId: async (shareId: string) => {
-    const res = await fetch(`${API_URL}/polls/${shareId}`);
+    const res = await fetch(`${API_URL}/polls/${shareId}`, {
+      headers: { Authorization: getToken() },
+    });
     return res.json();
   },
 
@@ -93,6 +95,37 @@ export const pollApi = {
       body: formData,
     });
     return res.json();
+  },
+
+  uploadWithProgress: (
+    file: File,
+    onProgress: (info: { loaded: number; total: number; percent: number }) => void,
+  ): { promise: Promise<any>; abort: () => void } => {
+    const xhr = new XMLHttpRequest();
+    const promise = new Promise<any>((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          onProgress({ loaded: e.loaded, total: e.total, percent: Math.round((e.loaded / e.total) * 100) });
+        }
+      });
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error(`Upload failed: ${xhr.status}`));
+        }
+      });
+      xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+      xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+
+      xhr.open("POST", `${API_URL}/upload`);
+      xhr.setRequestHeader("Authorization", getToken());
+      xhr.send(formData);
+    });
+    return { promise, abort: () => xhr.abort() };
   },
 
 update: async (pollId: string, data: { title?: string; description?: string; status?: string; visibility?: string; options?: any[]; allowRemix?: boolean; allowAnonymousVotes?: boolean; showWinner?: boolean; deadline?: string; password?: string }) => {
