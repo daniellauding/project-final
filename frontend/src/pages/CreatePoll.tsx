@@ -9,6 +9,7 @@ import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight
 import { Progress } from "../components/ui/progress";
 import { toEmbedUrl } from "../utils/embedUrl";
 import { toast } from "sonner";
+import TextFilePreview, { isTextFile } from "../components/TextFilePreview";
 
 const STEP_SLUGS = ["", "question", "publish"] as const;
 const STEP_LABELS = ["Options", "Question", "Publish"] as const;
@@ -396,6 +397,9 @@ const CreatePoll = () => {
                           </div>
                         )}
                         {opt.fileUrl && (() => {
+                          if (isTextFile(opt.fileUrl, opt.fileName)) {
+                            return <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="h-48" />;
+                          }
                           const isPdf = opt.fileUrl.toLowerCase().includes('.pdf');
                           return isPdf ? (
                             <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-48 border-0" />

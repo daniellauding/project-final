@@ -11,6 +11,7 @@ import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound, Clipboard, X }
 import { Progress } from "../components/ui/progress";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { toast } from "sonner";
+import TextFilePreview, { isTextFile } from "../components/TextFilePreview";
 
 type Option = { label: string; imageUrl: string; videoUrl: string; audioUrl: string; embedUrl: string; fileUrl: string; fileName: string };
 
@@ -442,7 +443,9 @@ const EditPoll = () => {
                   </div>
                 ) : opt.fileUrl ? (
                   <div className="relative">
-                    {opt.fileUrl.toLowerCase().includes('.pdf') ? (
+                    {isTextFile(opt.fileUrl, opt.fileName) ? (
+                      <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="h-40 rounded" />
+                    ) : opt.fileUrl.toLowerCase().includes('.pdf') ? (
                       <iframe src={opt.fileUrl} title={opt.fileName || "PDF"} className="w-full h-40 rounded border-0" />
                     ) : (
                       <div className="p-4 bg-muted/60 rounded flex items-center gap-3">

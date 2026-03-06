@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import AuthModal from "../components/AuthModal";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { useOverlayVisibility } from "../hooks/useOverlayVisibility";
+import TextFilePreview, { isTextFile } from "../components/TextFilePreview";
 
 interface PollOption {
   label: string;
@@ -104,6 +105,9 @@ function OptionMedia({ opt }: { opt: PollOption }) {
     );
   }
   if (opt.fileUrl) {
+    if (isTextFile(opt.fileUrl, opt.fileName)) {
+      return <TextFilePreview url={opt.fileUrl} fileName={opt.fileName} className="w-full h-full bg-background" />;
+    }
     const isPdf = opt.fileUrl.toLowerCase().includes('.pdf');
     if (isPdf) {
       return (
@@ -112,7 +116,9 @@ function OptionMedia({ opt }: { opt: PollOption }) {
     }
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-muted gap-4 p-8">
-        <span className="text-5xl">📄</span>
+        <span className="inline-block px-3 py-1.5 rounded bg-muted-foreground/10 text-sm font-mono font-bold uppercase tracking-wide">
+          {(opt.fileName || opt.fileUrl).split('.').pop()?.slice(0, 6) || "file"}
+        </span>
         <span className="text-lg font-medium text-muted-foreground">{opt.fileName || opt.label}</span>
         <a href={opt.fileUrl} target="_blank" rel="noopener noreferrer"
           className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition">
