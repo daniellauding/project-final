@@ -126,9 +126,12 @@ export default function NotificationBell() {
                   key={n._id}
                   to={n.poll?.shareId ? `/poll/${n.poll.shareId}` : "#"}
                   onClick={() => setOpen(false)}
-                  className={`block px-4 py-3 border-b border-border/40 hover:bg-accent/50 transition-colors ${!n.read ? "bg-primary/5" : ""}`}
+                  className={`block px-4 py-3 border-b border-border/40 hover:bg-accent/50 transition-colors ${!n.read ? "bg-primary/5 border-l-2 border-l-primary" : ""}`}
                 >
-                  <p className="text-sm">{n.message}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={`text-sm ${!n.read ? "font-medium" : ""}`}>{n.message}</p>
+                    {!n.read && <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />}
+                  </div>
                   <span className="text-[10px] text-muted-foreground">{timeAgo(n.createdAt)}</span>
                 </Link>
               ))

@@ -928,7 +928,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
             <StaggerIn show={introDone} delay={3600} skip={isReturning}>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl mt-6 mx-auto leading-relaxed">
                 Share anything — designs, code, music, docs — and let
-                your team vote on what ships.
+                people vote on what ships.
               </p>
             </StaggerIn>
 

@@ -231,49 +231,18 @@ const VIDEO_EXT = /\.(mp4|webm|mov|ogg)(\?.*)?$/i;
 const AUDIO_EXT = /\.(mp3|wav|flac|aac|ogg|m4a)(\?.*)?$/i;
 
 function CommentContent({ text, imageUrl, onImageClick }: { text: string; imageUrl?: string; onImageClick?: (src: string) => void }) {
-  const parts = text.split(URL_REGEX);
-  const urls = text.match(URL_REGEX) || [];
-
-  const richUrls = urls.map((u) => {
-    if (IMG_EXT.test(u)) return { url: u, type: "image" as const };
-    if (VIDEO_EXT.test(u)) return { url: u, type: "video" as const };
-    if (AUDIO_EXT.test(u)) return { url: u, type: "audio" as const };
-    const embed = toEmbedUrl(u);
-    if (embed) return { url: u, type: "embed" as const, embedSrc: embed };
-    return { url: u, type: "link" as const };
-  });
+  const hasCode = text.includes("```") || text.includes("`");
+  const hasMarkdown = hasCode || text.includes("**") || text.includes("##") || text.includes("- ");
 
   return (
     <div className="space-y-1.5">
-      {(parts.length > 1 || urls.length > 0) ? (
-        <p className="text-sm break-words">
-          {parts.map((part, i) => (
-            <span key={i}>
-              {part}
-              {richUrls[i] && (
-                <a
-                  href={richUrls[i].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2 hover:opacity-70"
-                >
-                  {richUrls[i].url.length > 50 ? richUrls[i].url.slice(0, 50) + "…" : richUrls[i].url}
-                </a>
-              )}
-            </span>
-          ))}
-        </p>
-      ) : (
-        text !== "📎" && <p className="text-sm">{text}</p>
-      )}
-
-      {richUrls.map((r, i) => {
-        if (r.type === "image") return <img key={i} src={r.url} alt="" className="max-h-32 rounded border cursor-pointer hover:opacity-80" loading="lazy" onClick={() => onImageClick?.(r.url)} />;
-        if (r.type === "video") return <video key={i} src={r.url} controls className="max-h-40 rounded border bg-black" />;
-        if (r.type === "audio") return <audio key={i} src={r.url} controls className="w-full" />;
-        if (r.type === "embed") return <iframe key={i} src={r.embedSrc} title="" className="w-full h-36 rounded border-0" allowFullScreen />;
-        return null;
-      })}
+      {hasMarkdown ? (
+        <div className="text-sm [&_pre]:bg-foreground/5 [&_pre]:rounded-md [&_pre]:p-2.5 [&_pre]:my-1.5 [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:font-mono [&_pre]:text-foreground/80 [&_code]:bg-foreground/5 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_code]:text-foreground/80 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_p]:mb-1 [&_ul]:ml-4 [&_ul]:list-disc [&_ol]:ml-4 [&_ol]:list-decimal [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-semibold [&_a]:text-primary [&_a]:underline">
+          <ReactMarkdown>{text}</ReactMarkdown>
+        </div>
+      ) : text !== "📎" ? (
+        <p className="text-sm break-words">{text}</p>
+      ) : null}
 
       {imageUrl && (
         <img src={imageUrl} alt="" className="max-h-32 rounded border cursor-pointer hover:opacity-80" loading="lazy" onClick={() => onImageClick?.(imageUrl)} />
@@ -835,22 +804,28 @@ const VotePoll = () => {
                           </button>
                         </div>
                       )}
-                      <div className="flex gap-2">
+                      <div className="space-y-1.5">
                         <label htmlFor="comment-input" className="sr-only">Write a comment</label>
-                        <input
-                          ref={commentInputRef}
+                        <textarea
+                          ref={commentInputRef as any}
                           id="comment-input"
                           value={commentText}
                           onChange={(e) => setCommentText(e.target.value)}
                           onPaste={handleCommentPaste}
-                          placeholder={uploadingImage ? "Uploading..." : "Comment or paste image..."}
-                          className="flex-1 border rounded-lg px-3 py-2 text-sm bg-transparent"
-                          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleComment()}
+                          placeholder={uploadingImage ? "Uploading..." : "Comment, paste code, or drop an image..."}
+                          className="w-full border rounded-lg px-3 py-2 text-sm bg-transparent resize-none font-mono min-h-[60px]"
+                          rows={3}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleComment();
+                          }}
                           disabled={uploadingImage}
                         />
-                        <Button size="sm" onClick={handleComment} disabled={(!commentText.trim() && !commentImageUrl) || uploadingImage}>
-                          Send
-                        </Button>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Markdown + code blocks supported. Cmd+Enter to send.</span>
+                          <Button size="sm" onClick={handleComment} disabled={(!commentText.trim() && !commentImageUrl) || uploadingImage}>
+                            Send
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
