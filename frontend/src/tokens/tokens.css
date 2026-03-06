@@ -1,5 +1,5 @@
 /**
- * Pejla Design Tokens
+ * Pejla Design Tokens v2.0.0
  * Auto-generated from design-tokens.json
  * DO NOT EDIT MANUALLY - Regenerate from source tokens
  */
@@ -15,6 +15,7 @@
   --spacing-2: 8px;
   --spacing-2-5: 10px;
   --spacing-3: 12px;
+  --spacing-3-5: 14px;
   --spacing-4: 16px;
   --spacing-5: 20px;
   --spacing-6: 24px;
@@ -22,10 +23,13 @@
   --spacing-8: 32px;
   --spacing-9: 36px;
   --spacing-10: 40px;
+  --spacing-11: 44px;
   --spacing-12: 48px;
+  --spacing-14: 56px;
   --spacing-16: 64px;
   --spacing-20: 80px;
   --spacing-24: 96px;
+  --spacing-28: 112px;
   --spacing-32: 128px;
   --spacing-40: 160px;
   --spacing-48: 192px;
@@ -53,6 +57,11 @@
   --color-purple-500: oklch(0.72 0.11 270);
   --color-purple-600: oklch(0.488 0.243 264.376);
 
+  /* v2: Teal (Tertiary Brand) */
+  --color-teal-50: oklch(0.97 0.02 180);
+  --color-teal-500: oklch(0.70 0.10 180);
+  --color-teal-900: oklch(0.30 0.08 180);
+
   --color-red-500: oklch(0.577 0.245 27.325);
   --color-red-600: oklch(0.704 0.191 22.216);
 
@@ -69,6 +78,21 @@
   --color-background-input: var(--color-gray-300);
   --color-background-sidebar: oklch(0.94 0.005 90);
 
+  /* v2: Surface Container Tokens (M3-inspired) */
+  --color-surface: var(--color-gray-50);
+  --color-surface-dim: var(--color-gray-100);
+  --color-surface-bright: var(--color-white);
+  --color-surface-container-lowest: var(--color-gray-50);
+  --color-surface-container-low: oklch(0.96 0.004 90);
+  --color-surface-container: oklch(0.94 0.005 90);
+  --color-surface-container-high: oklch(0.92 0.006 90);
+  --color-surface-container-highest: oklch(0.90 0.008 90);
+
+  /* v2: On-Surface Text Colors */
+  --color-on-surface: var(--color-gray-900);
+  --color-on-surface-variant: var(--color-gray-600);
+  --color-on-surface-muted: var(--color-gray-500);
+
   --color-foreground: var(--color-gray-950);
   --color-foreground-card: var(--color-gray-950);
   --color-foreground-popover: var(--color-gray-950);
@@ -83,10 +107,18 @@
   --color-border-input: var(--color-gray-300);
   --color-border-sidebar: var(--color-gray-300);
 
+  /* v2: Outline Variants */
+  --color-outline: var(--color-gray-300);
+  --color-outline-variant: var(--color-gray-200);
+
   --color-brand-primary: var(--color-purple-500);
   --color-brand-primary-foreground: var(--color-white);
   --color-brand-secondary: var(--color-gray-200);
   --color-brand-secondary-foreground: var(--color-gray-900);
+
+  /* v2: Tertiary Brand Color */
+  --color-brand-tertiary: var(--color-teal-500);
+  --color-brand-tertiary-foreground: var(--color-white);
 
   --color-accent: var(--color-gray-200);
   --color-accent-foreground: var(--color-gray-900);
@@ -166,6 +198,7 @@
      SHADOWS
      ============================================ */
   --shadow-none: none;
+  --shadow-2xs: 0 1px 0 0 rgba(0, 0, 0, 0.05);
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
@@ -184,13 +217,24 @@
   --shadow-button-outline: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-button-outline-hover: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
 
+  /* v2: Drop Shadows (for SVG/filter effects) */
+  --drop-shadow-xs: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
+  --drop-shadow-sm: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  --drop-shadow-md: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.07)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.06));
+  --drop-shadow-lg: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+  --drop-shadow-xl: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03)) drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08));
+  --drop-shadow-2xl: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15));
+
   /* ============================================
      ANIMATIONS
      ============================================ */
   --duration-instant: 0ms;
+  --duration-short-1: 50ms;
   --duration-fast: 150ms;
   --duration-base: 200ms;
+  --duration-medium-1: 250ms;
   --duration-moderate: 300ms;
+  --duration-long-1: 450ms;
   --duration-slow: 500ms;
   --duration-slower: 700ms;
 
@@ -200,6 +244,12 @@
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* v2: M3-Inspired Easing Curves */
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
   --scale-active: 0.97;
   --scale-hover: 1.02;
@@ -227,9 +277,12 @@
   --opacity-0: 0;
   --opacity-5: 0.05;
   --opacity-10: 0.1;
+  --opacity-12: 0.12;
   --opacity-15: 0.15;
+  --opacity-16: 0.16;
   --opacity-20: 0.2;
   --opacity-30: 0.3;
+  --opacity-38: 0.38;
   --opacity-40: 0.4;
   --opacity-50: 0.5;
   --opacity-60: 0.6;
@@ -237,6 +290,27 @@
   --opacity-80: 0.8;
   --opacity-90: 0.9;
   --opacity-100: 1;
+
+  /* v2: State Layer Opacity (M3-inspired) */
+  --opacity-hover: 0.08;
+  --opacity-focus: 0.12;
+  --opacity-press: 0.16;
+  --opacity-drag: 0.16;
+  --opacity-disabled: 0.38;
+
+  /* v2: State Layer Colors (overlay for interactions) */
+  --state-hover: rgba(0, 0, 0, 0.08);
+  --state-focus: rgba(0, 0, 0, 0.12);
+  --state-press: rgba(0, 0, 0, 0.16);
+
+  /* ============================================
+     ASPECT RATIOS (v2)
+     ============================================ */
+  --aspect-square: 1 / 1;
+  --aspect-video: 16 / 9;
+  --aspect-portrait: 3 / 4;
+  --aspect-landscape: 4 / 3;
+  --aspect-ultrawide: 21 / 9;
 }
 
 /* ============================================
@@ -249,6 +323,21 @@
   --color-background-popover: oklch(0.14 0.005 90);
   --color-background-input: oklch(1 0.005 90 / 15%);
   --color-background-sidebar: oklch(0.12 0.005 90);
+
+  /* v2: Dark Mode Surface Containers */
+  --color-surface: var(--color-gray-900);
+  --color-surface-dim: var(--color-gray-950);
+  --color-surface-bright: var(--color-gray-800);
+  --color-surface-container-lowest: var(--color-gray-950);
+  --color-surface-container-low: var(--color-gray-900);
+  --color-surface-container: var(--color-gray-800);
+  --color-surface-container-high: var(--color-gray-700);
+  --color-surface-container-highest: var(--color-gray-600);
+
+  /* v2: Dark Mode On-Surface Text */
+  --color-on-surface: oklch(0.92 0.005 90);
+  --color-on-surface-variant: var(--color-gray-400);
+  --color-on-surface-muted: var(--color-gray-500);
 
   --color-foreground: oklch(0.92 0.005 90);
   --color-foreground-card: oklch(0.92 0.005 90);
@@ -263,10 +352,18 @@
   --color-border-input: oklch(1 0.005 90 / 15%);
   --color-border-sidebar: oklch(1 0.005 90 / 10%);
 
+  /* v2: Dark Mode Outline Variants */
+  --color-outline: var(--color-gray-700);
+  --color-outline-variant: var(--color-gray-800);
+
   --color-brand-primary: var(--color-purple-400);
   --color-brand-primary-foreground: var(--color-gray-1000);
   --color-brand-secondary: var(--color-gray-800);
   --color-brand-secondary-foreground: oklch(0.92 0.005 90);
+
+  /* v2: Dark Mode Tertiary Brand */
+  --color-brand-tertiary: var(--color-teal-500);
+  --color-brand-tertiary-foreground: var(--color-gray-1000);
 
   --color-accent: var(--color-gray-800);
   --color-accent-foreground: oklch(0.92 0.005 90);
@@ -284,4 +381,9 @@
 
   --color-sidebar-primary: var(--color-purple-600);
   --color-sidebar-primary-foreground: oklch(0.92 0.005 90);
+
+  /* v2: Dark Mode State Layers (white overlays) */
+  --state-hover: rgba(255, 255, 255, 0.08);
+  --state-focus: rgba(255, 255, 255, 0.12);
+  --state-press: rgba(255, 255, 255, 0.16);
 }

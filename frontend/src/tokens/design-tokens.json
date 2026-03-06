@@ -1,5 +1,6 @@
 {
   "$schema": "https://tr.designtokens.org/format/",
+  "version": "2.0.0",
   "colors": {
     "primitive": {
       "gray": {
@@ -20,6 +21,11 @@
         "400": "oklch(0.76 0.12 270)",
         "500": "oklch(0.72 0.11 270)",
         "600": "oklch(0.488 0.243 264.376)"
+      },
+      "teal": {
+        "50": "oklch(0.97 0.02 180)",
+        "500": "oklch(0.70 0.10 180)",
+        "900": "oklch(0.30 0.08 180)"
       },
       "red": {
         "500": "oklch(0.577 0.245 27.325)",
@@ -55,6 +61,23 @@
         "input": "{colors.primitive.gray.300}",
         "sidebar": "oklch(0.94 0.005 90)"
       },
+      "surface": {
+        "default": "{colors.primitive.gray.50}",
+        "dim": "{colors.primitive.gray.100}",
+        "bright": "{colors.primitive.white}",
+        "container": {
+          "lowest": "{colors.primitive.gray.50}",
+          "low": "oklch(0.96 0.004 90)",
+          "default": "oklch(0.94 0.005 90)",
+          "high": "oklch(0.92 0.006 90)",
+          "highest": "oklch(0.90 0.008 90)"
+        }
+      },
+      "on-surface": {
+        "default": "{colors.primitive.gray.900}",
+        "variant": "{colors.primitive.gray.600}",
+        "muted": "{colors.primitive.gray.500}"
+      },
       "foreground": {
         "default": "{colors.primitive.gray.950}",
         "card": "{colors.primitive.gray.950}",
@@ -72,11 +95,17 @@
         "input": "{colors.primitive.gray.300}",
         "sidebar": "{colors.primitive.gray.300}"
       },
+      "outline": {
+        "default": "{colors.primitive.gray.300}",
+        "variant": "{colors.primitive.gray.200}"
+      },
       "brand": {
         "primary": "{colors.primitive.purple.500}",
         "primary-foreground": "{colors.primitive.white}",
         "secondary": "{colors.primitive.gray.200}",
-        "secondary-foreground": "{colors.primitive.gray.900}"
+        "secondary-foreground": "{colors.primitive.gray.900}",
+        "tertiary": "{colors.primitive.teal.500}",
+        "tertiary-foreground": "{colors.primitive.white}"
       },
       "accent": {
         "default": "{colors.primitive.gray.200}",
@@ -116,6 +145,27 @@
         "input": "oklch(1 0.005 90 / 15%)",
         "sidebar": "oklch(0.12 0.005 90)"
       },
+      "surface": {
+        "default": "{colors.primitive.gray.900}",
+        "dim": "{colors.primitive.gray.950}",
+        "bright": "{colors.primitive.gray.800}",
+        "container": {
+          "lowest": "{colors.primitive.gray.950}",
+          "low": "{colors.primitive.gray.900}",
+          "default": "{colors.primitive.gray.800}",
+          "high": "{colors.primitive.gray.700}",
+          "highest": "{colors.primitive.gray.600}"
+        }
+      },
+      "on-surface": {
+        "default": "oklch(0.92 0.005 90)",
+        "variant": "{colors.primitive.gray.400}",
+        "muted": "{colors.primitive.gray.500}"
+      },
+      "outline": {
+        "default": "{colors.primitive.gray.700}",
+        "variant": "{colors.primitive.gray.800}"
+      },
       "foreground": {
         "default": "oklch(0.92 0.005 90)",
         "card": "oklch(0.92 0.005 90)",
@@ -136,7 +186,9 @@
         "primary": "{colors.primitive.purple.400}",
         "primary-foreground": "{colors.primitive.gray.1000}",
         "secondary": "{colors.primitive.gray.800}",
-        "secondary-foreground": "oklch(0.92 0.005 90)"
+        "secondary-foreground": "oklch(0.92 0.005 90)",
+        "tertiary": "{colors.primitive.teal.500}",
+        "tertiary-foreground": "{colors.primitive.gray.1000}"
       },
       "accent": {
         "default": "{colors.primitive.gray.800}",
@@ -179,6 +231,7 @@
       "2": 8,
       "2.5": 10,
       "3": 12,
+      "3.5": 14,
       "4": 16,
       "5": 20,
       "6": 24,
@@ -265,6 +318,7 @@
   },
   "shadows": {
     "none": "none",
+    "2xs": "0 1px 0 0 rgba(0, 0, 0, 0.05)",
     "xs": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     "base": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
@@ -283,12 +337,23 @@
       "outline-hover": "0 2px 8px 0 rgba(0, 0, 0, 0.08)"
     }
   },
+  "dropShadow": {
+    "xs": "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05))",
+    "sm": "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))",
+    "md": "drop-shadow(0 4px 3px rgba(0, 0, 0, 0.07)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.06))",
+    "lg": "drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1))",
+    "xl": "drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03)) drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08))",
+    "2xl": "drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15))"
+  },
   "animations": {
     "duration": {
       "instant": 0,
+      "short-1": 50,
       "fast": 150,
       "base": 200,
+      "medium-1": 250,
       "moderate": 300,
+      "long-1": 450,
       "slow": 500,
       "slower": 700
     },
@@ -298,7 +363,11 @@
       "easeIn": "cubic-bezier(0.4, 0, 1, 1)",
       "easeOut": "cubic-bezier(0, 0, 0.2, 1)",
       "easeInOut": "cubic-bezier(0.4, 0, 0.2, 1)",
-      "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+      "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      "emphasized": "cubic-bezier(0.2, 0, 0, 1)",
+      "emphasized-decelerate": "cubic-bezier(0.05, 0.7, 0.1, 1)",
+      "emphasized-accelerate": "cubic-bezier(0.3, 0, 0.8, 0.15)",
+      "bounce": "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
     },
     "scale": {
       "active": 0.97,
@@ -319,10 +388,13 @@
     "0": 0,
     "5": 0.05,
     "10": 0.1,
+    "12": 0.12,
     "15": 0.15,
+    "16": 0.16,
     "20": 0.2,
     "25": 0.25,
     "30": 0.3,
+    "38": 0.38,
     "40": 0.4,
     "50": 0.5,
     "60": 0.6,
@@ -331,7 +403,21 @@
     "80": 0.8,
     "90": 0.9,
     "95": 0.95,
-    "100": 1
+    "100": 1,
+    "state": {
+      "hover": 0.08,
+      "focus": 0.12,
+      "press": 0.16,
+      "drag": 0.16,
+      "disabled": 0.38
+    }
+  },
+  "aspectRatio": {
+    "square": "1 / 1",
+    "video": "16 / 9",
+    "portrait": "3 / 4",
+    "landscape": "4 / 3",
+    "ultrawide": "21 / 9"
   },
   "zIndex": {
     "0": 0,
