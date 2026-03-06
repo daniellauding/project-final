@@ -2,22 +2,27 @@
 
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "radix-ui"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 function Avatar({
   className,
   size = "default",
+  loading = false,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Root> & {
   size?: "default" | "sm" | "lg"
+  loading?: boolean
 }) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
       data-size={size}
+      data-loading={loading}
       className={cn(
         "group/avatar relative flex size-8 shrink-0 overflow-hidden rounded-full select-none data-[size=lg]:size-10 data-[size=sm]:size-6",
+        loading && "animate-pulse bg-accent",
         className
       )}
       {...props}
@@ -40,8 +45,11 @@ function AvatarImage({
 
 function AvatarFallback({
   className,
+  loading = false,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback> & {
+  loading?: boolean
+}) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -50,7 +58,13 @@ function AvatarFallback({
         className
       )}
       {...props}
-    />
+    >
+      {loading ? (
+        <Loader2 className="size-4 animate-spin group-data-[size=sm]/avatar:size-3 group-data-[size=lg]/avatar:size-5" />
+      ) : (
+        props.children
+      )}
+    </AvatarPrimitive.Fallback>
   )
 }
 

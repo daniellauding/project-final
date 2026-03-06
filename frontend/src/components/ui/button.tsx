@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "radix-ui"
+import { Slot } from "@radix-ui/react-slot"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -16,6 +17,8 @@ const buttonVariants = cva(
           "border bg-background shadow-[var(--shadow-button-outline)] hover:bg-accent hover:text-accent-foreground hover:shadow-[var(--shadow-button-outline-hover)] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground shadow-[var(--shadow-button-secondary)] hover:bg-secondary/70 hover:shadow-[var(--shadow-button-secondary-hover)]",
+        tertiary:
+          "bg-brand-tertiary text-brand-tertiary-foreground shadow-[var(--shadow-button-default)] hover:brightness-110 hover:shadow-[var(--shadow-button-hover)]",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
@@ -38,27 +41,75 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot.Root : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+export interface ButtonProps
+  extends React.ComponentPropsWithoutRef<"button">,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  loading?: boolean
+  loadingText?: string
 }
 
-export { Button, buttonVariants }
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, loading = false, loadingText, disabled, children, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    
+    // Extract icon slots from children
+    const childArray = React.Children.toArray(children)
+    const leadingIcon = childArray.find((child) => 
+      React.isValidElement(child) && child.props?.slot === "leading"
+    )
+    const trailingIcon = childArray.find((child) =>
+      React.isValidElement(child) && child.props?.slot === "trailing"
+    )
+    const textContent = childArray.filter((child) =>
+      !React.isValidElement(child) || (child.props?.slot !== "leading" && child.props?.slot !== "trailing")
+    )
+    
+    return (
+      <Comp
+        ref={ref}
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        data-loading={loading}
+        className={cn(buttonVariants({ variant, size, className }))}
+        disabled={disabled || loading}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            {loadingText || textContent}
+          </>
+        ) : (
+          <>
+            {leadingIcon}
+            {textContent}
+            {trailingIcon}
+          </>
+        )}
+      </Comp>
+    )
+  }
+)
+Button.displayName = "Button"
+
+// Icon slot component
+const ButtonIcon = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement> & { slot: "leading" | "trailing" }
+>(({ slot, className, children, ...props }, ref) => {
+  return (
+    <span
+      ref={ref}
+      data-slot={`button-icon-${slot}`}
+      className={cn("inline-flex shrink-0", className)}
+      {...props}
+    >
+      {children}
+    </span>
+  )
+})
+ButtonIcon.displayName = "ButtonIcon"
+
+export { Button, ButtonIcon, buttonVariants }
