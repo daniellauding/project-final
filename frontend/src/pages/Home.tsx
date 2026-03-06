@@ -358,9 +358,9 @@ function FloatingCursors() {
         }
       `}</style>
       {[
-        { anim: "cursor-1", dur: "8s",  delay: "0s",   color: "#f9a8d4", label: "Anna" },
-        { anim: "cursor-2", dur: "9s",  delay: "1.5s", color: "#93c5fd", label: "Erik" },
-        { anim: "cursor-3", dur: "10s", delay: "3s",   color: "#86efac", label: "Sara" },
+        { anim: "cursor-1", dur: "8s",  delay: "0s",   color: "#f9a8d4", label: "Designer" },
+        { anim: "cursor-2", dur: "9s",  delay: "1.5s", color: "#93c5fd", label: "Client" },
+        { anim: "cursor-3", dur: "10s", delay: "3s",   color: "#86efac", label: "Developer" },
       ].map((c) => (
         <div
           key={c.anim}
