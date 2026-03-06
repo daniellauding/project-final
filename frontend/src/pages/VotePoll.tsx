@@ -409,10 +409,10 @@ const VotePoll = () => {
         fetchPoll();
         toast(votedIndex !== null ? "Vote changed!" : "Voted!");
       } else {
-        toast(data.error || "Vote failed");
+        toast(data.error || "Something went wrong — please try again");
       }
-    } catch (err) {
-      toast("Failed to vote: " + (err instanceof Error ? err.message : "network error"));
+    } catch {
+      toast("Could not connect — check your internet and try again");
     } finally {
       setVoting(false);
     }

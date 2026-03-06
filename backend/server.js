@@ -386,7 +386,7 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
 
     res.json({ success: true, message: "Vote recorded!" });
   } catch (error) {
-    res.status(400).json({ success: false, error: "Could not vote", message: error.message });
+    res.status(400).json({ success: false, error: "Something went wrong — please try again" });
   }
 });
 
@@ -416,7 +416,7 @@ app.post("/polls/:id/vote-anonymous", async (req, res) => {
     await poll.save();
     res.json({ success: true, message: "Anonymous vote recorded!" });
   } catch (error) {
-    res.status(400).json({ success: false, error: "Could not vote", message: error.message });
+    res.status(400).json({ success: false, error: "Something went wrong — please try again" });
   }
 });
 
