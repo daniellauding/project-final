@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
+import NotificationBell from "./NotificationBell";
 
 const LogoMark = () => (
   <svg width="24" height="14" viewBox="0 0 1242 657" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden="true">
@@ -52,15 +53,18 @@ const Header = () => {
             </span>
           </Link>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className={onPollPage ? "text-foreground/60 hover:text-foreground" : ""}
-            aria-label="Menu"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button
+              variant="ghost"
+              size="sm"
+              className={onPollPage ? "text-foreground/60 hover:text-foreground" : ""}
+              aria-label="Menu"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
 
         {menuOpen && (

@@ -8,6 +8,7 @@ import User from "./models/User.js";
 import Poll from "./models/Poll.js";
 import Comment from "./models/Comment.js";
 import Report from "./models/Report.js";
+import Notification from "./models/Notification.js";
 import Team from "./models/Team.js";
 import Project from "./models/Project.js";
 import upload from "./middleware/upload.js";
@@ -69,6 +70,10 @@ app.get("/", (req, res) => {
       { method: "POST", path: "/reports", description: "Report poll/comment (auth)" },
       { method: "GET", path: "/admin/reports", description: "View reports (admin)" },
       { method: "PATCH", path: "/admin/reports/:id", description: "Update report (admin)" },
+      { method: "GET", path: "/notifications", description: "Get notifications (auth)" },
+      { method: "GET", path: "/notifications/unread-count", description: "Unread count (auth)" },
+      { method: "PATCH", path: "/notifications/:id/read", description: "Mark one read (auth)" },
+      { method: "PATCH", path: "/notifications/read-all", description: "Mark all read (auth)" },
     ]
   });
 });
@@ -363,6 +368,22 @@ app.post("/polls/:id/vote", authenticateUser, async (req, res) => {
     poll.options[optionIndex].votes.push(req.user._id);
     await poll.save();
 
+    // Create notification for poll creator
+    try {
+      if (poll.creator.toString() !== req.user._id.toString()) {
+        await new Notification({
+          user: poll.creator,
+          type: "vote",
+          poll: poll._id,
+          fromUser: req.user._id,
+          fromUsername: req.user.username,
+          message: `${req.user.username} voted on your poll`
+        }).save();
+      }
+    } catch (notifError) {
+      console.error("Notification error (vote):", notifError.message);
+    }
+
     res.json({ success: true, message: "Vote recorded!" });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not vote", message: error.message });
@@ -518,6 +539,23 @@ app.post("/polls/:id/remix", authenticateUser, async (req, res) => {
     });
 
     const saved = await remix.save();
+
+    // Create notification for original poll creator
+    try {
+      if (original.creator.toString() !== req.user._id.toString()) {
+        await new Notification({
+          user: original.creator,
+          type: "remix",
+          poll: original._id,
+          fromUser: req.user._id,
+          fromUsername: req.user.username,
+          message: `${req.user.username} remixed your poll`
+        }).save();
+      }
+    } catch (notifError) {
+      console.error("Notification error (remix):", notifError.message);
+    }
+
     res.status(201).json({ success: true, poll: saved });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not remix poll", message: error.message });
@@ -577,6 +615,24 @@ app.post("/polls/:id/comments", authenticateUser, async (req, res) => {
     });
 
     const saved = await comment.save();
+
+    // Create notification for poll creator
+    try {
+      const poll = await Poll.findById(req.params.id);
+      if (poll && poll.creator.toString() !== req.user._id.toString()) {
+        await new Notification({
+          user: poll.creator,
+          type: "comment",
+          poll: poll._id,
+          fromUser: req.user._id,
+          fromUsername: req.user.username,
+          message: `${req.user.username} commented on your poll`
+        }).save();
+      }
+    } catch (notifError) {
+      console.error("Notification error (comment):", notifError.message);
+    }
+
     res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not create comment", message: error.message });
@@ -678,6 +734,58 @@ app.patch("/admin/reports/:id", authenticateUser, async (req, res) => {
     res.json({ success: true, report });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not update report", message: error.message });
+  }
+});
+
+// === NOTIFICATIONS ===
+
+// Get current user's notifications
+app.get("/notifications", authenticateUser, async (req, res) => {
+  try {
+    const notifications = await Notification.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json({ success: true, notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not fetch notifications", message: error.message });
+  }
+});
+
+// Get unread count
+app.get("/notifications/unread-count", authenticateUser, async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({ user: req.user._id, read: false });
+    res.json({ success: true, count });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not fetch unread count", message: error.message });
+  }
+});
+
+// Mark all as read
+app.patch("/notifications/read-all", authenticateUser, async (req, res) => {
+  try {
+    await Notification.updateMany({ user: req.user._id, read: false }, { read: true });
+    res.json({ success: true, message: "All notifications marked as read" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not mark notifications as read", message: error.message });
+  }
+});
+
+// Mark one as read
+app.patch("/notifications/:id/read", authenticateUser, async (req, res) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+    if (!notification) {
+      return res.status(404).json({ success: false, error: "Notification not found" });
+    }
+    if (notification.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+    notification.read = true;
+    await notification.save();
+    res.json({ success: true, notification });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not mark notification as read", message: error.message });
   }
 });
 
