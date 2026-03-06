@@ -357,10 +357,10 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                 and let the best design win.
               </p>
               <div className="flex gap-3 mt-10 justify-center">
-                <Button onClick={handleCta} className="h-14 px-8 text-lg">
+                <Button onClick={handleCta} className="h-14 px-10 text-lg">
                   {user ? "Create a poll" : "Start for free"} <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button variant="outline" className="h-14 px-8 text-lg" asChild>
+                <Button variant="outline" className="h-14 px-10 text-lg" asChild>
                   <a href="#how-it-works">How it works</a>
                 </Button>
               </div>
