@@ -2,23 +2,17 @@ import { describe, it, expect } from "vitest";
 import { toEmbedUrl, isEmbeddable } from "./embedUrl";
 
 describe("toEmbedUrl", () => {
-  it("converts Figma URLs to embed format", () => {
-    const url = "https://www.figma.com/design/abc123/MyDesign";
-    const result = toEmbedUrl(url);
-    expect(result).toContain("figma.com/embed");
-    expect(result).toContain(encodeURIComponent(url));
-  });
-
-  it("converts Figma proto URLs to embed format", () => {
-    const url = "https://www.figma.com/proto/abc123/MyProto";
-    const result = toEmbedUrl(url);
-    expect(result).toContain("figma.com/embed");
-    expect(result).toContain(encodeURIComponent(url));
-  });
-
-  it("leaves Figma embed URLs unchanged", () => {
-    const url = "https://www.figma.com/embed?embed_host=share&url=test";
+  it("embeds Figma published sites (*.figma.site)", () => {
+    const url = "https://chef-vast-97767987.figma.site";
     expect(toEmbedUrl(url)).toBe(url);
+  });
+
+  it("returns null for figma.com/proto (CSP blocks iframes)", () => {
+    expect(toEmbedUrl("https://www.figma.com/proto/abc123/MyProto")).toBeNull();
+  });
+
+  it("returns null for figma.com/make (CSP blocks iframes)", () => {
+    expect(toEmbedUrl("https://www.figma.com/make/abc123/MyDesign")).toBeNull();
   });
 
   it("converts YouTube watch URLs to embed", () => {
@@ -75,7 +69,7 @@ describe("toEmbedUrl", () => {
 
 describe("isEmbeddable", () => {
   it("returns true for known embeddable domains", () => {
-    expect(isEmbeddable("https://www.figma.com/design/123")).toBe(true);
+    expect(isEmbeddable("https://chef-vast-97767987.figma.site")).toBe(true);
     expect(isEmbeddable("https://www.youtube.com/watch?v=123")).toBe(true);
     expect(isEmbeddable("https://codepen.io/pen/123")).toBe(true);
     expect(isEmbeddable("https://my-app.vercel.app")).toBe(true);

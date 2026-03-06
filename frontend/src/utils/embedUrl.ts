@@ -37,8 +37,7 @@ const EMBEDDABLE_DOMAINS = [
   "pages.dev",
   "workers.dev",
   "deno.dev",
-  "figma.com",
-  "www.figma.com",
+  "figma.site",
 ];
 
 /**
@@ -110,11 +109,9 @@ export function toEmbedUrl(url: string): string | null {
       return url.replace("open.spotify.com", "open.spotify.com/embed");
     }
 
-    // Figma (proto, design, board) — use official embed endpoint
-    if (u.hostname === "www.figma.com" || u.hostname === "figma.com") {
-      if (u.pathname === "/embed") return url;
-      return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(url)}`;
-    }
+    // Figma published sites (*.figma.site) — embeddable as-is
+    // Note: figma.com/proto and figma.com/make block iframes via CSP
+    if (u.hostname.endsWith(".figma.site")) return url;
 
     // Known embeddable domains — return as-is
     if (isEmbeddable(url)) return url;
