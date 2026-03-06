@@ -404,15 +404,27 @@ const CreatePoll = () => {
         </div>
       </div>
 
+      {/* Remix banner */}
+      {remixFrom && (
+        <div className="bg-primary/5 border-b border-primary/10 px-4 py-2.5 text-center">
+          <p className="text-sm">
+            <span className="font-medium">Remixing</span>
+            <span className="text-muted-foreground"> — You're building on someone else's idea. Change anything you like, then publish as your own version.</span>
+          </p>
+        </div>
+      )}
+
       {/* Step content */}
       <div className="flex-1 flex flex-col">
         {/* Step 0: Options — horizontal scroll */}
         {step === 0 && (
           <div className="flex-1 flex flex-col">
             <div className="text-center py-6 px-4">
-              <h2 className="text-xl md:text-2xl tracking-tight">Add your options</h2>
+              <h2 className="text-xl md:text-2xl tracking-tight">{remixFrom ? "Edit your remix" : "Add your options"}</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                {filledOptions.length} of {options.length} filled · need at least 2
+                {remixFrom
+                  ? `${options.length} options copied — swap, edit, or add more`
+                  : `${filledOptions.length} of ${options.length} filled · need at least 2`}
                 {activeCard !== null && (
                   <span className="ml-1">· pasting into Option {activeCard + 1}</span>
                 )}
@@ -715,7 +727,7 @@ const CreatePoll = () => {
                   {remixFrom ? "Remix a poll" : "What are you deciding?"}
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  Give your poll a clear question so voters know what to focus on.
+                  {remixFrom ? "Update the title or keep the original." : "Give it a clear question so voters know what to focus on."}
                 </p>
                 {!title.trim() && (
                   <p className="text-xs text-muted-foreground/70 mt-1">

@@ -57,6 +57,7 @@ interface Poll {
   deadline: string | null;
   remixes: RemixInfo[];
   remixedFrom: string | null;
+  remixedFromData?: { shareId: string; title: string; creatorName: string } | null;
   visibility?: string;
   password?: string;
 }
@@ -518,6 +519,20 @@ const VotePoll = () => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Remix banner */}
+      {poll.remixedFromData && (
+        <div className="absolute top-14 left-0 right-0 z-30 flex justify-center pointer-events-none">
+          <Link
+            to={`/poll/${poll.remixedFromData.shareId}`}
+            className="pointer-events-auto px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/60 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+          >
+            <span>Remix of</span>
+            <span className="font-medium text-foreground">{poll.remixedFromData.title}</span>
+            <span>by {poll.remixedFromData.creatorName}</span>
+          </Link>
+        </div>
+      )}
+
       {/* Carousel */}
       <div ref={carouselRef} className="h-full overflow-hidden">
         {multiSlide ? (
@@ -956,6 +971,25 @@ const VotePoll = () => {
                     )}
                     {isClosed && <p>This poll is closed</p>}
                   </div>
+                  {poll.remixedFromData && (
+                    <div className="border-t pt-3">
+                      <p className="text-xs text-muted-foreground mb-1">Remixed from</p>
+                      <Link to={`/poll/${poll.remixedFromData.shareId}`} className="text-sm text-primary hover:underline">
+                        {poll.remixedFromData.title}
+                      </Link>
+                      <p className="text-xs text-muted-foreground">by {poll.remixedFromData.creatorName}</p>
+                    </div>
+                  )}
+                  {poll.remixes?.length > 0 && (
+                    <div className="border-t pt-3">
+                      <p className="text-xs text-muted-foreground mb-1">{poll.remixes.length} remix{poll.remixes.length > 1 ? "es" : ""}</p>
+                      {poll.remixes.map((r) => (
+                        <Link key={r._id} to={`/poll/${r.shareId}`} className="block text-sm text-primary hover:underline">
+                          {r.title} <span className="text-xs text-muted-foreground">by {r.creatorName}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1139,7 +1139,17 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{poll.title}</h3>
-                    <p className="text-xs text-muted-foreground">By {poll.creatorName} · {poll.options.length} options</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+                      <span>By {poll.creatorName}</span>
+                      <span>·</span>
+                      <span>{poll.options.length} options</span>
+                      {poll.remixedFrom && (
+                        <>
+                          <span>·</span>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Remix</Badge>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </Link>
               );

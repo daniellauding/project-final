@@ -299,7 +299,14 @@ app.get("/polls/:shareId", async (req, res) => {
       thumbnail: r.options[0]?.imageUrl || null,
     }));
 
-    res.json({ ...poll.toObject(), totalVotes, results, remixes: remixData, allowAnonymousVotes: poll.allowAnonymousVotes });
+    // If this is a remix, get the original's shareId
+    let remixedFromData = null;
+    if (poll.remixedFrom) {
+      const original = await Poll.findById(poll.remixedFrom).select("shareId title creatorName");
+      if (original) remixedFromData = { shareId: original.shareId, title: original.title, creatorName: original.creatorName };
+    }
+
+    res.json({ ...poll.toObject(), totalVotes, results, remixes: remixData, remixedFromData, allowAnonymousVotes: poll.allowAnonymousVotes });
   } catch (error) {
     res.status(500).json({ success: false, error: "Could not fetch poll", message: error.message });
   }
