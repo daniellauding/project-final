@@ -12,6 +12,32 @@ const config: StorybookConfig = {
     "@storybook/addon-docs",
     "@storybook/addon-onboarding"
   ],
-  "framework": "@storybook/react-vite"
+  "framework": "@storybook/react-vite",
+  async viteFinal(config) {
+    return {
+      ...config,
+      server: {
+        ...config.server,
+        host: '0.0.0.0',
+        strictPort: true,
+        cors: true,
+      },
+      optimizeDeps: {
+        ...config.optimizeDeps,
+        include: [
+          ...(config.optimizeDeps?.include || []),
+          'lucide-react',
+          'next-themes',
+          'sonner',
+          'class-variance-authority',
+          '@radix-ui/react-slot',
+          'clsx',
+          'tailwind-merge',
+          'react-router-dom',
+          'react-markdown',
+        ],
+      },
+    };
+  },
 };
 export default config;

@@ -1,10 +1,10 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@plugin "@tailwindcss/typography";
-
 /* Import design tokens from Agent 1 */
 @import "./tokens/tokens.css";
+
+/* Tailwind v3 directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Apercu font-face declarations (files in public/apercu-font/) */
 @font-face {
@@ -66,64 +66,6 @@
   font-display: swap;
 }
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-    /* Map design tokens to Tailwind v4 theme system */
-    
-    /* Spacing - use design token variables */
-    --spacing-*: initial;
-    
-    /* Colors - map semantic tokens to Tailwind classes */
-    --color-background: var(--color-background);
-    --color-foreground: var(--color-foreground);
-    --color-card: var(--color-background-card);
-    --color-card-foreground: var(--color-foreground-card);
-    --color-popover: var(--color-background-popover);
-    --color-popover-foreground: var(--color-foreground-popover);
-    --color-primary: var(--color-brand-primary);
-    --color-primary-foreground: var(--color-brand-primary-foreground);
-    --color-secondary: var(--color-brand-secondary);
-    --color-secondary-foreground: var(--color-brand-secondary-foreground);
-    --color-muted: var(--color-muted);
-    --color-muted-foreground: var(--color-muted-foreground);
-    --color-accent: var(--color-accent);
-    --color-accent-foreground: var(--color-accent-foreground);
-    --color-destructive: var(--color-destructive);
-    --color-border: var(--color-border);
-    --color-input: var(--color-background-input);
-    --color-ring: var(--color-ring);
-    --color-chart-1: var(--color-chart-1);
-    --color-chart-2: var(--color-chart-2);
-    --color-chart-3: var(--color-chart-3);
-    --color-chart-4: var(--color-chart-4);
-    --color-chart-5: var(--color-chart-5);
-    --color-sidebar: var(--color-background-sidebar);
-    --color-sidebar-foreground: var(--color-foreground-sidebar);
-    --color-sidebar-primary: var(--color-sidebar-primary);
-    --color-sidebar-primary-foreground: var(--color-sidebar-primary-foreground);
-    --color-sidebar-accent: var(--color-accent-sidebar);
-    --color-sidebar-accent-foreground: var(--color-accent-sidebar-foreground);
-    --color-sidebar-border: var(--color-border-sidebar);
-    --color-sidebar-ring: var(--color-ring-sidebar);
-    
-    /* Typography - use design token fonts */
-    --font-sans: var(--font-sans);
-    --font-display: var(--font-display);
-    --font-mono: var(--font-mono);
-    
-    /* Border radius - use design token radii */
-    --radius-none: var(--radius-none);
-    --radius-sm: var(--radius-sm);
-    --radius-base: var(--radius-base);
-    --radius-md: var(--radius-md);
-    --radius-lg: var(--radius-lg);
-    --radius-xl: var(--radius-xl);
-    --radius-2xl: var(--radius-2xl);
-    --radius-3xl: var(--radius-3xl);
-    --radius-full: var(--radius-full);
-}
-
 :root {
     /* Chart colors (will be migrated to tokens.css later) */
     --color-chart-1: oklch(0.646 0.222 41.116);
@@ -144,7 +86,13 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--color-border);
+    outline-color: var(--color-ring);
+    outline-width: 0;
+    }
+  *:focus-visible {
+    outline-width: 2px;
+    outline-offset: 2px;
     }
   body {
     @apply bg-background text-foreground;

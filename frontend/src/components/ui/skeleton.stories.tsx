@@ -37,7 +37,7 @@ export const Circle: Story = {
   },
 };
 
-export const Card: Story = {
+export const SkeletonCard: Story = {
   render: () => (
     <Card className="w-[300px] p-4">
       <div className="space-y-3">
