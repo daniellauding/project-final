@@ -29,6 +29,8 @@ interface Poll {
   status: string;
   visibility?: string;
   password?: string;
+  thumbnailUrl?: string;
+  remixedFrom?: string | null;
   createdAt: string;
 }
 

@@ -627,7 +627,16 @@ function ScrollSlideIn({ children, className = "" }: { children: ReactNode; clas
 }
 
 /* ── Looping option thumbnail for cards with multiple options ── */
-function LoopingThumbnail({ options, className, getOptionMedia }: { options: any[]; className: string; getOptionMedia: (opt: any) => { thumb: string | null; type: string } }) {
+function LoopingThumbnail({ options, className, getOptionMedia, thumbnailUrl }: { options: any[]; className: string; getOptionMedia: (opt: any) => { thumb: string | null; type: string }; thumbnailUrl?: string }) {
+  // Poll-level thumbnail takes priority
+  if (thumbnailUrl) {
+    return (
+      <div className={`${className} relative`}>
+        <img src={thumbnailUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+
   const media = options.map(getOptionMedia);
   const hasAnyVisual = media.some((m) => m.thumb);
   const [idx, setIdx] = useState(0);
@@ -797,6 +806,7 @@ function RecentPollsCarousel({ polls, getThumbnail, getOptionMedia }: { polls: a
               }}
             >
               <LoopingThumbnail options={poll.options} getOptionMedia={getOptionMedia}
+                thumbnailUrl={poll.thumbnailUrl}
                 className="bg-muted overflow-hidden h-[380px] md:h-[420px] lg:h-[440px]" />
               <div className="absolute top-3 right-3 flex gap-1.5">
                 {poll.remixedFrom && (
@@ -888,7 +898,7 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
   useEffect(() => { fetchPolls(); }, [fetchPolls]);
 
   const getThumbnail = (poll: (typeof polls)[0]): string | null => {
-    if ((poll as any).thumbnailUrl) return (poll as any).thumbnailUrl;
+    if (poll.thumbnailUrl) return poll.thumbnailUrl;
     for (const opt of poll.options) {
       if (opt.coverUrl) return opt.coverUrl;
       if (opt.imageUrl) return opt.imageUrl;

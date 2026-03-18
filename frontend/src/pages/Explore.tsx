@@ -13,7 +13,7 @@ const Explore = () => {
   }, [fetchPolls]);
 
   const getThumbnail = (poll: (typeof polls)[0]): string | null => {
-    if ((poll as any).thumbnailUrl) return (poll as any).thumbnailUrl;
+    if (poll.thumbnailUrl) return poll.thumbnailUrl;
     for (const opt of poll.options) {
       if ((opt as any).coverUrl) return (opt as any).coverUrl;
       if (opt.imageUrl) return opt.imageUrl;
