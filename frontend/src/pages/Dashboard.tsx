@@ -31,6 +31,7 @@ const Dashboard = () => {
   };
 
   const getThumbnail = (poll: (typeof polls)[0]): string | null => {
+    if (poll.thumbnailUrl) return poll.thumbnailUrl;
     for (const opt of poll.options) {
       if (opt.coverUrl) return opt.coverUrl;
       if (opt.imageUrl) return opt.imageUrl;
