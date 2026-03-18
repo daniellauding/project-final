@@ -652,8 +652,20 @@ function LoopingThumbnail({ options, className, getOptionMedia, thumbnailUrl }: 
     return () => clearInterval(t);
   }, [media.length]);
 
-  // No visuals at all — show icon-based or text placeholder
+  // No visuals at all — show icon-based placeholder
+  const hasEmbeds = options.some((o: any) => o.embedUrl);
   if (!hasAnyVisual) {
+    // Embed-only polls get a clean monitor icon
+    if (hasEmbeds) {
+      return (
+        <div className={`${className} flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-muted/50`}>
+          <svg viewBox="0 0 24 24" className="w-12 h-12 text-muted-foreground/20" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+          <span className="text-sm text-muted-foreground/40">{options.length} embeds</span>
+        </div>
+      );
+    }
     const primaryType = media[0]?.type || "none";
     const textOpt = options.find((o: any) => o.textContent);
     if (textOpt) {
@@ -725,6 +737,13 @@ function LoopingThumbnail({ options, className, getOptionMedia, thumbnailUrl }: 
                     ))}
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-100 dark:from-slate-800 to-transparent" />
+                </div>
+              ) : m.type === "embed" ? (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-muted/50">
+                  <svg viewBox="0 0 24 24" className="w-10 h-10 text-muted-foreground/20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                  </svg>
+                  <span className="text-xs text-muted-foreground/40">{options[i]?.label}</span>
                 </div>
               ) : null}
             </div>
