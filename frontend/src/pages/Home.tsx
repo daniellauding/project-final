@@ -483,7 +483,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
       {/* Card with slide animation */}
       <div key={idx} className={slideClass}>
         {isCtaSlide ? (
-          <div className="w-[340px] xl:w-[380px] h-[480px] xl:h-[520px] rounded-2xl border border-border/40 bg-card shadow-lg flex flex-col items-center justify-center text-center p-8 gap-4">
+          <div className="w-[380px] xl:w-[440px] h-[480px] xl:h-[520px] rounded-2xl border border-border/40 bg-card shadow-lg flex flex-col items-center justify-center text-center p-8 gap-4">
             <h3 className="text-xl font-semibold">Your turn</h3>
             <p className="text-sm text-muted-foreground">Share anything — designs, code, music, docs — and let your team vote.</p>
             <button onClick={onCta} className="mt-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:brightness-110 transition flex items-center gap-2">
@@ -492,7 +492,7 @@ function HeroPollPreview({ polls, getThumbnail, onCta }: { polls: any[]; getThum
           </div>
         ) : (
           <Link to={`/poll/${poll.shareId}`}
-            className="group block w-[340px] xl:w-[380px] rounded-2xl border border-border/40 bg-card overflow-hidden shadow-lg hover:shadow-xl transition-all">
+            className="group block w-[380px] xl:w-[440px] rounded-2xl border border-border/40 bg-card overflow-hidden shadow-lg hover:shadow-xl transition-all">
             <div className="h-[400px] xl:h-[440px] bg-muted relative overflow-hidden">
               {thumb ? (
                 <>
