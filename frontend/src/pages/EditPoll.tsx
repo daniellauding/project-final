@@ -313,7 +313,7 @@ const EditPoll = () => {
             Cover image
           </Label>
           <p className="text-xs text-muted-foreground">
-            Shown on cards and in the feed. Without this, the first option's image is used.
+            Featured image for cards and feed. Recommended: 1200×800px, JPG/PNG, max 5 MB. Falls back to first option's image if empty.
           </p>
           {thumbnailUrl ? (
             <div className="relative rounded-lg overflow-hidden">
@@ -343,6 +343,14 @@ const EditPoll = () => {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast("Image too large — max 5 MB");
+                    return;
+                  }
+                  if (!file.type.startsWith("image/")) {
+                    toast("Only image files (JPG, PNG, WebP)");
+                    return;
+                  }
                   setUploadingThumb(true);
                   try {
                     const data = await pollApi.upload(file);
