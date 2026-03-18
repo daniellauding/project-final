@@ -573,6 +573,17 @@ const VotePoll = () => {
         )}
       </div>
 
+      {/* Remix indicator */}
+      {poll.remixes && poll.remixes.length > 0 && !poll.remixedFromData && (
+        <button
+          onClick={() => setPanel(panel === "remixes" ? null : "remixes")}
+          className={`absolute z-10 bottom-28 md:bottom-auto md:top-16 left-1/2 -translate-x-1/2 md:left-auto md:right-3 md:translate-x-0 px-3 py-1.5 rounded-full border border-border/60 bg-background/80 backdrop-blur-sm text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 ${overlayClass}`}
+        >
+          <GitBranch className="h-3 w-3" />
+          {poll.remixes.length} remix{poll.remixes.length > 1 ? "es" : ""} of this poll
+        </button>
+      )}
+
       {/* Action bar — right on desktop, bottom on mobile */}
       <div className={`absolute z-10
         bottom-16 left-1/2 -translate-x-1/2 flex-row gap-1 p-1 flex

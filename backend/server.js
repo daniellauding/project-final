@@ -231,11 +231,17 @@ app.get("/polls", async (req, res) => {
 
     const total = await Poll.countDocuments(filter);
 
+    const enriched = polls.map((p) => {
+      const obj = p.toObject();
+      obj.totalVotes = obj.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
+      return obj;
+    });
+
     res.json({
       total,
       page: Number(page),
       totalPages: Math.ceil(total / Number(limit)),
-      results: polls
+      results: enriched
     });
   } catch (error) {
     res.status(500).json({ success: false, error: "Could not fetch polls", message: error.message });

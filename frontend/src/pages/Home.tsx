@@ -44,7 +44,7 @@ function HeroIntro({ introDone, onComplete }: { introDone: boolean; onComplete: 
 
   useEffect(() => {
     if (introDone) return;
-    const t1 = setTimeout(() => { onComplete(); sessionStorage.setItem("pejla-intro", "done"); }, INTRO_MS);
+    const t1 = setTimeout(() => { onComplete(); localStorage.setItem("pejla-intro", "done"); }, INTRO_MS);
     const t2 = setTimeout(() => setOverlayGone(true), INTRO_MS + 800);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [onComplete, introDone]);
@@ -916,8 +916,8 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
     trackEvent("cta_clicked", { location: "landing", logged_in: !!user });
     user ? navigate("/create") : setShowAuth(true);
   };
-  const [introDone, setIntroDone] = useState(() => sessionStorage.getItem("pejla-intro") === "done");
-  const isReturning = useRef(sessionStorage.getItem("pejla-intro") === "done").current;
+  const [introDone, setIntroDone] = useState(() => localStorage.getItem("pejla-intro") === "done");
+  const isReturning = useRef(localStorage.getItem("pejla-intro") === "done").current;
 
   useEffect(() => { fetchPolls(); }, [fetchPolls]);
 
