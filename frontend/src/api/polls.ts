@@ -128,7 +128,7 @@ export const pollApi = {
     return { promise, abort: () => xhr.abort() };
   },
 
-update: async (pollId: string, data: { title?: string; description?: string; status?: string; visibility?: string; options?: any[]; allowRemix?: boolean; allowAnonymousVotes?: boolean; showWinner?: boolean; deadline?: string; password?: string }) => {
+update: async (pollId: string, data: { title?: string; description?: string; status?: string; visibility?: string; options?: any[]; allowRemix?: boolean; allowAnonymousVotes?: boolean; showWinner?: boolean; deadline?: string; password?: string; thumbnailUrl?: string }) => {
     const res = await fetch(`${API_URL}/polls/${pollId}`, {
       method: "PATCH",
       headers: {

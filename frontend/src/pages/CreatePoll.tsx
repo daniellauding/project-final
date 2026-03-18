@@ -9,8 +9,10 @@ import { PlusCircle, Trash2, ImagePlus, Eye, EyeOff, Lock, ArrowLeft, ArrowRight
 import { Progress } from "../components/ui/progress";
 import { toEmbedUrl } from "../utils/embedUrl";
 import { toast } from "sonner";
+import { trackEvent } from "../lib/analytics";
 import TextFilePreview, { isTextFile } from "../components/TextFilePreview";
 
+const BETA_DEADLINE = new Date("2026-03-31T23:59:59Z");
 const STEP_SLUGS = ["", "question", "publish"] as const;
 const STEP_LABELS = ["Options", "Question", "Publish"] as const;
 
@@ -129,6 +131,10 @@ const CreatePoll = () => {
 
     try {
       const data = await promise;
+      if (data.error && data.error.includes("Beta has ended")) {
+        toast("Beta has ended — uploads are closed.");
+        return;
+      }
       updateOption(index, { coverUrl: data.url || data.imageUrl });
     } catch (err: any) {
       if (err?.message !== "Upload cancelled") toast("Cover upload failed");
@@ -183,6 +189,10 @@ const CreatePoll = () => {
 
     try {
       const data = await promise;
+      if (data.error && data.error.includes("Beta has ended")) {
+        toast("Beta has ended — uploads are closed.");
+        return;
+      }
       if (data.fileType === "video") updateOption(index, { videoUrl: data.url });
       else if (data.fileType === "audio") updateOption(index, { audioUrl: data.url });
       else if (data.fileType === "file") updateOption(index, { fileUrl: data.url, fileName: file.name });
@@ -331,8 +341,20 @@ const CreatePoll = () => {
           ...(password ? { password } : {}),
         });
       }
+      if (data.error && data.error.includes("Beta has ended")) {
+        toast("Beta has ended — poll creation is closed. Stay tuned for the next version!");
+        return;
+      }
       const shareId = data.poll?.shareId || data.remix?.shareId;
-      if (shareId) navigate(`/poll/${shareId}`);
+      if (shareId) {
+        trackEvent(remixPollId ? "poll_remixed" : "poll_created", {
+          poll_id: shareId,
+          options_count: options.length,
+          has_media: options.some((o) => o.imageUrl || o.videoUrl || o.audioUrl),
+          visibility,
+        });
+        navigate(`/poll/${shareId}`);
+      }
     } catch {
       toast("Failed to create poll");
     } finally {
@@ -342,6 +364,20 @@ const CreatePoll = () => {
 
   const hasMedia = (opt: typeof options[0]) => opt.imageUrl || opt.videoUrl || opt.audioUrl || opt.fileUrl || opt.textContent;
   const filledOptions = options.filter((o) => o.label.trim());
+
+  if (new Date() > BETA_DEADLINE) {
+    return (
+      <div className="container mx-auto p-8 pt-24 text-center max-w-lg">
+        <h1 className="text-2xl font-bold mb-4">Beta has ended</h1>
+        <p className="text-muted-foreground mb-2">
+          Thanks for being part of the Pejla beta! Poll creation is now closed as we prepare the next version.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          You can still browse and vote on existing polls. Stay tuned for what's next!
+        </p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

@@ -312,10 +312,29 @@ app.get("/polls/:shareId", async (req, res) => {
   }
 });
 
+// Beta deadline — creation disabled after this date
+const BETA_DEADLINE = new Date("2026-03-31T23:59:59Z");
+
+// Beta status
+app.get("/beta-status", (req, res) => {
+  const now = new Date();
+  res.json({
+    betaOpen: now <= BETA_DEADLINE,
+    deadline: BETA_DEADLINE.toISOString(),
+  });
+});
+
 // Create poll
 app.post("/polls", authenticateUser, async (req, res) => {
+  if (new Date() > BETA_DEADLINE) {
+    return res.status(403).json({
+      success: false,
+      error: "Beta has ended. Poll creation is closed. Stay tuned for the next version!"
+    });
+  }
+
   try {
-    const { title, description, options, status, allowAnonymousVotes, visibility, password, showWinner, deadline, allowRemix } = req.body;
+    const { title, description, options, status, allowAnonymousVotes, visibility, password, showWinner, deadline, allowRemix, thumbnailUrl } = req.body;
 
     const poll = new Poll({
       title,
@@ -328,6 +347,7 @@ app.post("/polls", authenticateUser, async (req, res) => {
       showWinner: showWinner !== undefined ? showWinner : true,
       deadline: deadline || null,
       allowRemix: allowRemix !== undefined ? allowRemix : true,
+      thumbnailUrl: thumbnailUrl || "",
       creator: req.user._id,
       creatorName: req.user.username
     });
@@ -483,7 +503,7 @@ app.patch("/polls/:id", authenticateUser, async (req, res) => {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
-    const { title, description, status, visibility, options, allowRemix, allowAnonymousVotes, password, showWinner, deadline } = req.body;
+    const { title, description, status, visibility, options, allowRemix, allowAnonymousVotes, password, showWinner, deadline, thumbnailUrl } = req.body;
     if (title) poll.title = title;
     if (description !== undefined) poll.description = description;
     if (status) poll.status = status;
@@ -494,6 +514,7 @@ app.patch("/polls/:id", authenticateUser, async (req, res) => {
     if (password !== undefined) poll.password = password;
     if (showWinner !== undefined) poll.showWinner = showWinner;
     if (deadline !== undefined) poll.deadline = deadline || null;
+    if (thumbnailUrl !== undefined) poll.thumbnailUrl = thumbnailUrl;
 
     const updated = await poll.save();
     res.json(updated);
@@ -585,6 +606,12 @@ app.post("/polls/:id/remix", authenticateUser, async (req, res) => {
 
 // Upload (image, video, audio)
 app.post("/upload", authenticateUser, (req, res, next) => {
+  if (new Date() > BETA_DEADLINE) {
+    return res.status(403).json({
+      success: false,
+      error: "Beta has ended. Uploads are closed. Stay tuned for the next version!"
+    });
+  }
   upload.single("file")(req, res, (err) => {
     if (err) {
       console.error("Upload error:", err);

@@ -11,6 +11,7 @@ import {
   Eye, EyeOff, Lock, KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
+import { trackEvent } from "../lib/analytics";
 import AuthModal from "../components/AuthModal";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { useOverlayVisibility } from "../hooks/useOverlayVisibility";
@@ -375,6 +376,13 @@ const VotePoll = () => {
         return;
       }
       if (data.success) {
+        trackEvent("poll_voted", {
+          poll_id: poll!._id,
+          share_id: shareId,
+          option_index: optionIndex,
+          anonymous: !user,
+          changed_vote: votedIndex !== null,
+        });
         setVotedIndex(optionIndex);
         fetchPoll();
         toast(votedIndex !== null ? "Vote changed!" : "Voted!");
@@ -428,6 +436,7 @@ const VotePoll = () => {
       text: commentText || (commentImageUrl ? "📎" : ""),
       imageUrl: commentImageUrl || undefined,
     });
+    trackEvent("comment_added", { poll_id: poll!._id, has_image: !!commentImageUrl });
     setCommentText("");
     setCommentImageUrl("");
     fetchComments();
@@ -643,6 +652,7 @@ const VotePoll = () => {
             const base = `${window.location.origin}/poll/${poll.shareId}`;
             const url = multiSlide ? `${base}/option/${current + 1}` : base;
             navigator.clipboard.writeText(url);
+            trackEvent("poll_shared", { poll_id: poll._id, share_id: poll.shareId });
             toast(multiSlide ? `Link to Option ${current + 1} copied!` : "Link copied!");
           }}
           className="p-3 rounded-full bg-background hover:bg-secondary border border-border text-foreground focus-visible:ring-2 focus-visible:ring-ring"

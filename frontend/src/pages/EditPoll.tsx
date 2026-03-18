@@ -7,7 +7,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent } from "../components/ui/card";
-import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound, Clipboard, X, Type } from "lucide-react";
+import { Upload, Trash2, PlusCircle, Eye, EyeOff, Lock, KeyRound, Clipboard, X, Type, ImageIcon } from "lucide-react";
 import { Progress } from "../components/ui/progress";
 import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ const EditPoll = () => {
   const [pollStatus, setPollStatus] = useState("published");
   const [options, setOptions] = useState<Option[]>([]);
   const [pollId, setPollId] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [uploadingThumb, setUploadingThumb] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<Set<number>>(new Set());
   const [uploadProgress, setUploadProgress] = useState<Map<number, number>>(new Map());
@@ -56,6 +58,7 @@ const EditPoll = () => {
       setShowWinner(data.showWinner !== false);
       setDeadline(data.deadline ? new Date(data.deadline).toISOString().slice(0, 16) : "");
       setPollStatus(data.status || "published");
+      setThumbnailUrl(data.thumbnailUrl || "");
       setPollId(data._id);
       const opts = data.options.map((opt: any) => ({
         label: opt.label || "",
@@ -243,6 +246,7 @@ const EditPoll = () => {
         showWinner,
         deadline: deadline || undefined,
         password,
+        thumbnailUrl,
         options: options.map((opt) => ({
           label: opt.label,
           imageUrl: opt.imageUrl,
@@ -300,6 +304,60 @@ const EditPoll = () => {
         <div className="space-y-2">
           <Label htmlFor="desc">Description</Label>
           <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+        </div>
+
+        {/* Poll thumbnail */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4" />
+            Cover image
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Shown on cards and in the feed. Without this, the first option's image is used.
+          </p>
+          {thumbnailUrl ? (
+            <div className="relative rounded-lg overflow-hidden">
+              <img src={thumbnailUrl} alt="Poll thumbnail" className="w-full h-40 object-cover" />
+              <button
+                type="button"
+                onClick={() => setThumbnailUrl("")}
+                className="absolute top-2 right-2 px-2 py-1 rounded bg-black/60 text-white text-xs hover:bg-black/80 transition"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <label className={`flex flex-col items-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${uploadingThumb ? "border-primary/50" : "border-border/60 hover:border-primary/30"}`}>
+              {uploadingThumb ? (
+                <span className="text-sm text-muted-foreground">Uploading...</span>
+              ) : (
+                <>
+                  <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+                  <span className="text-sm text-muted-foreground">Drop or click to upload cover image</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingThumb(true);
+                  try {
+                    const data = await pollApi.upload(file);
+                    if (data.url || data.imageUrl) {
+                      setThumbnailUrl(data.url || data.imageUrl);
+                    }
+                  } catch {
+                    toast("Thumbnail upload failed");
+                  } finally {
+                    setUploadingThumb(false);
+                  }
+                }}
+              />
+            </label>
+          )}
         </div>
 
         {/* Visibility */}

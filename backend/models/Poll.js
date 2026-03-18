@@ -117,6 +117,10 @@ const pollSchema = new mongoose.Schema({
     ref: "Poll",
     default: null
   },
+  thumbnailUrl: {
+    type: String,
+    default: ""
+  },
   deadline: {
     type: Date,
     default: null

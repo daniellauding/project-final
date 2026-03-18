@@ -7,6 +7,9 @@ import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
 import NotificationBell from "./NotificationBell";
 
+const BETA_DEADLINE = new Date("2026-03-31T23:59:59Z");
+const betaOpen = new Date() <= BETA_DEADLINE;
+
 const LogoMark = () => (
   <svg width="24" height="14" viewBox="0 0 1242 657" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden="true">
     <path d="M132.234 584.797C68.9754 534.55 30.6254 470.301 19.4563 390.243C15.3078 360.507 15.5755 330.794 18.5121 300.998C19.0191 295.854 21.9956 295.896 25.7406 295.899C84.3964 295.94 143.052 295.928 201.708 295.928C229.869 295.928 258.032 295.821 286.192 296.033C290.926 296.069 292.359 294.873 292.351 289.986C292.207 196.004 292.244 102.021 292.246 8.03861C292.246 -0.120679 292.25 -0.0642185 300.625 0.0149155C336.41 0.353034 371.847 3.42771 406.428 13.3245C431.993 20.6409 456.243 30.9622 479.832 43.3165C524.507 66.7129 563.108 97.3954 594.026 137.174C640.834 197.397 664.036 265.636 660.863 342.252C657.072 433.779 618.389 508.663 550.905 569.182C493.993 620.22 426.457 647.467 350.735 654.563C318.219 657.61 286.162 652.825 254.686 644.743C209.906 633.246 169.065 613.465 132.234 584.797Z" fill="currentColor"/>
@@ -82,9 +85,11 @@ const Header = () => {
                   <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={itemClass}>
                     <LayoutDashboard className="h-4 w-4" /> Dashboard
                   </Link>
-                  <Link to="/create" onClick={() => setMenuOpen(false)} className={itemClass}>
-                    <PlusCircle className="h-4 w-4" /> New poll
-                  </Link>
+                  {betaOpen && (
+                    <Link to="/create" onClick={() => setMenuOpen(false)} className={itemClass}>
+                      <PlusCircle className="h-4 w-4" /> New poll
+                    </Link>
+                  )}
                   <Link to="/profile" state={{ backgroundLocation: location }} onClick={() => setMenuOpen(false)} className={itemClass}>
                     <User className="h-4 w-4" /> {user.username}
                   </Link>

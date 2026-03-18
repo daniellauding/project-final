@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authApi } from "../api/auth";
+import { identifyUser, resetUser, trackEvent } from "../lib/analytics";
 
 interface User {
   userId: string;
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
+      identifyUser(user.userId, { username: user.username });
     } else {
       localStorage.removeItem("user");
     }
@@ -44,6 +46,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         avatarUrl: data.avatarUrl || "",
         accessToken: data.accessToken,
       });
+      identifyUser(data.userId, { username: data.username });
+      trackEvent("user_logged_in");
       return { success: true };
     }
     return { success: false, error: data.error };
@@ -58,12 +62,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         avatarUrl: data.avatarUrl || "",
         accessToken: data.accessToken,
       });
+      identifyUser(data.userId, { username: data.username });
+      trackEvent("user_registered");
       return { success: true };
     }
     return { success: false, error: data.error };
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    trackEvent("user_logged_out");
+    resetUser();
+    setUser(null);
+  };
 
   const updateUser = (data: Partial<User>) => {
     setUser((prev) => prev ? { ...prev, ...data } : null);

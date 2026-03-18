@@ -9,6 +9,7 @@ import {
   PlusCircle, ArrowRight, ImagePlus, MousePointerClick, BarChart3, Lock, ChevronLeft, ChevronRight
 } from "lucide-react";
 import AuthModal from "../components/AuthModal";
+import { trackEvent } from "../lib/analytics";
 
 /* ── Scroll fade-in ── */
 function FadeIn({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -867,19 +868,27 @@ const steps = [
   { icon: BarChart3, title: "Decide", desc: "See results instantly. Comments, remixes, and a clear winner." },
 ];
 
+/* ── Beta deadline ── */
+const BETA_DEADLINE = new Date("2026-03-31T23:59:59Z");
+const betaOpen = new Date() <= BETA_DEADLINE;
+
 /* ── Page ── */
 const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { polls, loading, fetchPolls } = usePollStore();
   const [showAuth, setShowAuth] = useState(false);
-  const handleCta = () => user ? navigate("/create") : setShowAuth(true);
+  const handleCta = () => {
+    trackEvent("cta_clicked", { location: "landing", logged_in: !!user });
+    user ? navigate("/create") : setShowAuth(true);
+  };
   const [introDone, setIntroDone] = useState(() => sessionStorage.getItem("pejla-intro") === "done");
   const isReturning = useRef(sessionStorage.getItem("pejla-intro") === "done").current;
 
   useEffect(() => { fetchPolls(); }, [fetchPolls]);
 
   const getThumbnail = (poll: (typeof polls)[0]): string | null => {
+    if ((poll as any).thumbnailUrl) return (poll as any).thumbnailUrl;
     for (const opt of poll.options) {
       if (opt.coverUrl) return opt.coverUrl;
       if (opt.imageUrl) return opt.imageUrl;
@@ -937,12 +946,28 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
               </p>
             </StaggerIn>
 
+            {/* Beta banner */}
+            <StaggerIn show={introDone} delay={4000} skip={isReturning}>
+              <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/60 bg-muted/50 text-sm text-muted-foreground">
+                <span className={`inline-block w-2 h-2 rounded-full ${betaOpen ? "bg-green-500" : "bg-amber-500"}`} />
+                {betaOpen
+                  ? "Public beta — open until March 31, 2026. This school project is entering its next phase."
+                  : "Beta closed — thanks for participating! Next version coming soon."}
+              </div>
+            </StaggerIn>
+
             {/* 3. CTAs */}
             <StaggerIn show={introDone} delay={4200} skip={isReturning}>
               <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center items-center">
-                <Button onClick={handleCta} className="h-14 px-10 text-lg w-full sm:w-auto">
-                  Share something <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                {betaOpen ? (
+                  <Button onClick={handleCta} className="h-14 px-10 text-lg w-full sm:w-auto">
+                    Share something <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button onClick={() => window.location.href = "/explore"} className="h-14 px-10 text-lg w-full sm:w-auto">
+                    Browse polls <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                )}
                 <Button variant="outline" className="h-14 px-10 text-lg w-full sm:w-auto" asChild>
                   <a href="#how-it-works">How it works</a>
                 </Button>
@@ -978,18 +1003,27 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           {/* CTA */}
           <section className="border-t border-border/60 py-20 px-4 text-center">
             <FadeIn>
-              <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Ready to pejla?</h2>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Free forever. Get your first feedback in 30 seconds.
-              </p>
-              <Button size="lg" onClick={handleCta}>
-                Share something <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <div className="mt-4">
-                <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  How it works
-                </a>
-              </div>
+              {betaOpen ? (
+                <>
+                  <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Ready to pejla?</h2>
+                  <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                    Free forever. Get your first feedback in 30 seconds.
+                  </p>
+                  <Button size="lg" onClick={handleCta}>
+                    Share something <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-3xl md:text-4xl tracking-tight mb-4">Thanks for being part of the beta</h2>
+                  <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                    Poll creation is closed, but you can still browse, vote, and comment. Sign up to be notified when the next version launches.
+                  </p>
+                  <Button size="lg" onClick={() => setShowAuth(true)}>
+                    Sign up for updates
+                  </Button>
+                </>
+              )}
             </FadeIn>
           </section>
 
@@ -1070,9 +1104,11 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
           <h1 className="text-2xl">Welcome back{user.username ? `, ${user.username}` : ""}</h1>
           <p className="text-sm text-muted-foreground mt-1">Browse recent decisions or start your own.</p>
         </div>
-        <Button asChild>
-          <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> New</Link>
-        </Button>
+        {betaOpen && (
+          <Button asChild>
+            <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> New</Link>
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -1160,11 +1196,13 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
               );
             })}
           </div>
-          <div className="text-center mt-10">
-            <Button variant="outline" asChild>
-              <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Create new</Link>
-            </Button>
-          </div>
+          {betaOpen && (
+            <div className="text-center mt-10">
+              <Button variant="outline" asChild>
+                <Link to="/create"><PlusCircle className="mr-2 h-4 w-4" /> Create new</Link>
+              </Button>
+            </div>
+          )}
         </>
       ) : (
         <div className="max-w-lg mx-auto text-center py-16">

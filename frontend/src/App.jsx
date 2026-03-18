@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { posthog } from "./lib/analytics";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { Toaster } from "./components/ui/sonner";
@@ -20,9 +21,10 @@ const AppRoutes = () => {
   const location = useLocation();
   const bgLocation = location.state?.backgroundLocation;
 
-  // Scroll to top on route change
+  // Scroll to top + track pageview on route change
   useEffect(() => {
     window.scrollTo(0, 0);
+    posthog.capture("$pageview");
   }, [location.pathname]);
 
   return (
