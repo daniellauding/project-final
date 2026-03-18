@@ -226,34 +226,39 @@ function WithoutTheNoise({ started, skipAnim }: { started: boolean; skipAnim: bo
   );
 }
 
-/* ── Step 1 illustration: two cards switching ── */
+/* ── Step 1 illustration: cards cycling through options ── */
 function CardStack() {
   const [front, setFront] = useState(0);
+  const images = ["/how/01.png", "/how/02.png", "/how/3.png", "/how/4.png"];
+  const images2x = ["/how/01@2x.png", "/how/02@2x.png", "/how/3@2x.png", "/how/4@2x.png"];
+  const tilts = ["-rotate-3", "rotate-3", "-rotate-2", "rotate-2"];
+
   useEffect(() => {
-    const t = setInterval(() => setFront((f) => (f + 1) % 2), 2800);
+    const t = setInterval(() => setFront((f) => (f + 1) % images.length), 2800);
     return () => clearInterval(t);
   }, []);
-  const images = ["/how/01.png", "/how/02.png"];
-  const images2x = ["/how/01@2x.png", "/how/02@2x.png"];
+
   return (
     <div className="relative w-full aspect-[3/4] max-w-sm mx-auto flex items-center justify-center">
-      {[0, 1].map((i) => {
-        const isFront = front === i;
-        const tilt = i === 0 ? "-rotate-3" : "rotate-3";
+      {images.map((src, i) => {
+        const offset = (i - front + images.length) % images.length;
+        const isFront = offset === 0;
         return (
           <div
             key={i}
-            className={`absolute w-[80%] aspect-[3/4] rounded-2xl border border-border/60 bg-card shadow-lg transition-all duration-700 ease-in-out overflow-hidden ${tilt} ${
+            className={`absolute w-[80%] aspect-[3/4] rounded-2xl border border-border/60 bg-card shadow-lg transition-all duration-700 ease-in-out overflow-hidden ${tilts[i]} ${
               isFront
                 ? "z-10 scale-100 opacity-100 translate-y-0"
-                : "z-0 scale-95 opacity-60 translate-y-3"
+                : offset === 1
+                ? "z-[9] scale-95 opacity-50 translate-y-3"
+                : "z-0 scale-90 opacity-0 translate-y-6"
             }`}
           >
             <img
-              src={images[i]}
-              srcSet={`${images[i]} 960w, ${images2x[i]} 1920w`}
+              src={src}
+              srcSet={`${src} 960w, ${images2x[i]} 1920w`}
               sizes="300px"
-              alt={`Option ${i === 0 ? "A" : "B"}`}
+              alt={`Option ${String.fromCharCode(65 + i)}`}
               className="w-full h-full object-cover"
               loading="lazy"
             />
