@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Pencil, Trash2,
   MessageCircle, Share2, BarChart3, GitBranch, X,
   LogIn, Flag, ThumbsUp, Info, Image as ImageIcon,
-  Eye, EyeOff, Lock, KeyRound
+  Eye, EyeOff, Lock, KeyRound, MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "../lib/analytics";
@@ -567,8 +567,10 @@ const VotePoll = () => {
                 className="h-full shrink-0"
                 style={{ width: `${100 / poll.results.length}%`, padding: "0.75rem 1vw" }}
               >
-                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm bg-white dark:bg-background border border-border/10">
-                  <OptionMedia opt={o} />
+                <div className="relative w-full h-full rounded-xl shadow-sm bg-white dark:bg-background border border-border/10">
+                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                    <OptionMedia opt={o} />
+                  </div>
                   <PinDropLayer
                     pollId={poll._id}
                     optionIndex={i}
@@ -581,8 +583,10 @@ const VotePoll = () => {
           </div>
         ) : (
           <div className="w-full h-full" style={{ padding: "0.75rem 1vw" }}>
-            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm bg-white dark:bg-background border border-border/10">
-              <OptionMedia opt={opt} />
+            <div className="relative w-full h-full rounded-xl shadow-sm bg-white dark:bg-background border border-border/10">
+              <div className="absolute inset-0 overflow-hidden rounded-xl">
+                <OptionMedia opt={opt} />
+              </div>
               <PinDropLayer
                 pollId={poll._id}
                 optionIndex={current}
@@ -652,6 +656,17 @@ const VotePoll = () => {
           aria-label="Show results"
         >
           <BarChart3 className="h-5 w-5" />
+        </button>
+
+        <button
+          onClick={() => setPinMode(!pinMode)}
+          className={`p-3 rounded-full border transition focus-visible:ring-2 focus-visible:ring-ring ${
+            pinMode ? "bg-foreground text-background border-foreground" : "bg-background hover:bg-secondary text-foreground border-border"
+          }`}
+          aria-label={pinMode ? "Exit pin mode (V)" : "Drop pin feedback (C)"}
+          title={pinMode ? "Exit pin mode (V)" : "Drop pin feedback (C)"}
+        >
+          <MapPin className="h-5 w-5" />
         </button>
 
         <button

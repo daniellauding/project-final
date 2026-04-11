@@ -319,7 +319,7 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
         </div>
       )}
 
-      {/* Floating controls */}
+      {/* Floating controls — resolved filter + pin mode hint */}
       <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5">
         {pins.length > 0 && resolvedCount > 0 && (
           <button
@@ -331,17 +331,12 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
             {showResolved ? `Hide ${resolvedCount} resolved` : `Show ${resolvedCount} resolved`}
           </button>
         )}
-        <button
-          onClick={onToggle}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition backdrop-blur-sm ${
-            enabled
-              ? "bg-primary text-primary-foreground border-primary shadow-lg"
-              : "bg-background/80 text-foreground border-border hover:bg-secondary"
-          }`}
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          {enabled ? "Pinning..." : `Pins${pins.length ? ` (${pins.length})` : ""}`}
-        </button>
+        {enabled && (
+          <div className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary text-xs font-medium shadow-lg backdrop-blur-sm flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5" />
+            Click to pin · V to exit
+          </div>
+        )}
       </div>
     </>
   );
