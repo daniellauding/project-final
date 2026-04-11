@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { pollApi } from "../api/polls";
 import { useAuth } from "../context/AuthContext";
-import { Check, X, MapPin, Send, Image as ImageIcon, Smile } from "lucide-react";
+import { Check, X, MapPin, Send, Image as ImageIcon, Smile, Paperclip } from "lucide-react";
 
 interface Reply {
   _id: string;
@@ -49,6 +49,8 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
   const [activePin, setActivePin] = useState<string | null>(null);
   const [showResolved, setShowResolved] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [replyImageUrl, setReplyImageUrl] = useState("");
+  const [draftImageUrl, setDraftImageUrl] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [replyEmojiPicker, setReplyEmojiPicker] = useState(false);
   const layerRef = useRef<HTMLDivElement>(null);
@@ -124,11 +126,13 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
       optionIndex,
       username: user?.username || anonName || "Ralph Wiggum",
       emoji: draftEmoji,
+      imageUrl: draftImageUrl,
     });
 
     setPlacing(null);
     setDraftText("");
     setDraftEmoji("");
+    setDraftImageUrl("");
     fetchPins();
   };
 
@@ -138,9 +142,11 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
     await pollApi.addPinReply(pinId, {
       text: replyText.trim(),
       username: user?.username || anonName || "Ralph Wiggum",
+      imageUrl: replyImageUrl,
     });
 
     setReplyText("");
+    setReplyImageUrl("");
     fetchPins();
   };
 
@@ -161,16 +167,48 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
     setDraftEmoji("");
   };
 
-  // Render @mentions as highlighted spans
+  // Image upload for pins/replies
+  const handleImageUpload = async (file: File): Promise<string> => {
+    const result = await pollApi.upload(file);
+    return result.url || result.imageUrl || "";
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent, target: "pin" | "reply") => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) return;
+        const url = await handleImageUpload(file);
+        if (target === "pin") setDraftImageUrl(url);
+        else setReplyImageUrl(url);
+      }
+    }
+  };
+
+  // Render @mentions and URLs as interactive elements
   const renderText = (text: string) => {
-    const parts = text.split(/(@\w+)/g);
-    return parts.map((part, i) =>
-      part.startsWith("@") ? (
-        <span key={i} className="text-primary font-medium">{part}</span>
-      ) : (
-        <span key={i}>{part}</span>
-      )
-    );
+    const URL_RE = /(https?:\/\/[^\s<]+)/g;
+    const MENTION_RE = /(@\w+)/g;
+    const COMBINED = /(https?:\/\/[^\s<]+|@\w+)/g;
+
+    const parts = text.split(COMBINED);
+    return parts.map((part, i) => {
+      if (part.match(URL_RE)) {
+        return (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+            className="text-primary underline hover:opacity-80 break-all"
+            onClick={(e) => e.stopPropagation()}
+          >{part.length > 40 ? part.slice(0, 37) + "..." : part}</a>
+        );
+      }
+      if (part.match(MENTION_RE)) {
+        return <span key={i} className="text-primary font-medium">{part}</span>;
+      }
+      return <span key={i}>{part}</span>;
+    });
   };
 
   const visiblePins = showResolved ? pins : pins.filter(p => !p.resolved);
@@ -315,6 +353,14 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
 
               {/* Actions */}
               <div className="px-3 py-2 border-t border-border/50 shrink-0 space-y-1.5">
+                {/* Reply image preview */}
+                {replyImageUrl && (
+                  <div className="relative inline-block mb-1">
+                    <img src={replyImageUrl} alt="Attachment" className="max-h-12 rounded border" />
+                    <button onClick={() => setReplyImageUrl("")} className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-foreground text-background flex items-center justify-center text-[10px]">×</button>
+                  </div>
+                )}
+
                 {/* Reply input */}
                 <div className="flex items-center gap-1">
                   <div className="relative flex-1">
@@ -322,8 +368,9 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
                       ref={replyInputRef}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Reply... (use @name to mention)"
-                      className="w-full border rounded-full px-3 py-1.5 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-primary pr-8"
+                      onPaste={(e: React.ClipboardEvent<HTMLInputElement>) => handlePaste(e, "reply")}
+                      placeholder="Reply... (@name to mention, paste image)"
+                      className="w-full border rounded-full px-3 py-1.5 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-primary pr-16"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
@@ -331,16 +378,28 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
                         }
                       }}
                     />
-                    <button
-                      onClick={() => setReplyEmojiPicker(!replyEmojiPicker)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Smile className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <label className="text-muted-foreground hover:text-foreground cursor-pointer">
+                        <Paperclip className="h-3.5 w-3.5" />
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = await handleImageUpload(file);
+                            setReplyImageUrl(url);
+                          }
+                        }} />
+                      </label>
+                      <button
+                        onClick={() => setReplyEmojiPicker(!replyEmojiPicker)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Smile className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleReply(pin._id)}
-                    disabled={!replyText.trim()}
+                    disabled={!replyText.trim() && !replyImageUrl}
                     className="p-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-30"
                   >
                     <Send className="h-3 w-3" />
@@ -424,6 +483,7 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
                 ref={inputRef}
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
+                onPaste={(e) => handlePaste(e, "pin")}
                 placeholder="Leave feedback... (use @name to mention)"
                 className="w-full border rounded px-2 py-1.5 text-sm bg-transparent resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 rows={2}
@@ -433,7 +493,15 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
                 }}
               />
 
-              {/* Emoji picker */}
+              {/* Image attachment preview */}
+              {draftImageUrl && (
+                <div className="relative inline-block mt-1">
+                  <img src={draftImageUrl} alt="Attachment" className="max-h-16 rounded border" />
+                  <button onClick={() => setDraftImageUrl("")} className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-foreground text-background flex items-center justify-center text-[10px]">×</button>
+                </div>
+              )}
+
+              {/* Toolbar: emoji + attach */}
               <div className="flex items-center gap-1 mt-1.5">
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -441,6 +509,16 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
                 >
                   <Smile className="h-3.5 w-3.5" />
                 </button>
+                <label className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer transition">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const url = await handleImageUpload(file);
+                      setDraftImageUrl(url);
+                    }
+                  }} />
+                </label>
                 {draftEmoji && (
                   <span className="text-sm flex items-center gap-1">
                     {draftEmoji}
