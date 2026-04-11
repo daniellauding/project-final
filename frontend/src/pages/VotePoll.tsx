@@ -17,6 +17,7 @@ import { toEmbedUrl, isEmbeddable } from "../utils/embedUrl";
 import { useOverlayVisibility } from "../hooks/useOverlayVisibility";
 import TextFilePreview, { isTextFile } from "../components/TextFilePreview";
 import ReactMarkdown from "react-markdown";
+import PinDropLayer from "../components/PinDropLayer";
 
 interface PollOption {
   label: string;
@@ -284,6 +285,7 @@ const VotePoll = () => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [pinMode, setPinMode] = useState(false);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
   const overlayVisible = useOverlayVisibility(panel !== null);
@@ -482,7 +484,14 @@ const VotePoll = () => {
       }
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
-      if (e.key === "Escape") setPanel(null);
+      if (e.key === "Escape") { setPanel(null); setPinMode(false); }
+      // Figma-style shortcuts: C = comment/pin mode, V = view mode
+      if (e.key === "c" && !e.metaKey && !e.ctrlKey && !(e.target as HTMLElement).closest("input,textarea")) {
+        setPinMode(true);
+      }
+      if (e.key === "v" && !e.metaKey && !e.ctrlKey && !(e.target as HTMLElement).closest("input,textarea")) {
+        setPinMode(false);
+      }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -558,16 +567,28 @@ const VotePoll = () => {
                 className="h-full shrink-0"
                 style={{ width: `${100 / poll.results.length}%`, padding: "0.75rem 1vw" }}
               >
-                <div className="w-full h-full rounded-xl overflow-hidden shadow-sm bg-white dark:bg-background border border-border/10">
+                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm bg-white dark:bg-background border border-border/10">
                   <OptionMedia opt={o} />
+                  <PinDropLayer
+                    pollId={poll._id}
+                    optionIndex={i}
+                    enabled={pinMode && current === i}
+                    onToggle={() => setPinMode(!pinMode)}
+                  />
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="w-full h-full" style={{ padding: "0.75rem 1vw" }}>
-            <div className="w-full h-full rounded-xl overflow-hidden shadow-sm bg-white dark:bg-background border border-border/10">
+            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-sm bg-white dark:bg-background border border-border/10">
               <OptionMedia opt={opt} />
+              <PinDropLayer
+                pollId={poll._id}
+                optionIndex={current}
+                enabled={pinMode}
+                onToggle={() => setPinMode(!pinMode)}
+              />
             </div>
           </div>
         )}

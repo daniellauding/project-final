@@ -185,4 +185,40 @@ update: async (pollId: string, data: { title?: string; description?: string; sta
     });
     return res.json();
   },
+
+  // Pin comments (Figma-style drop pins)
+  getPins: async (pollId: string, optionIndex?: number) => {
+    const q = optionIndex !== undefined ? `?optionIndex=${optionIndex}` : "";
+    const res = await fetch(`${API_URL}/polls/${pollId}/pins${q}`);
+    return res.json();
+  },
+
+  addPin: async (pollId: string, data: { text: string; xPercent: number; yPercent: number; optionIndex: number; username?: string }) => {
+    const res = await fetch(`${API_URL}/polls/${pollId}/pins`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: getToken(),
+      },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  updatePin: async (pinId: string, data: { resolved?: boolean; text?: string }) => {
+    const res = await fetch(`${API_URL}/pins/${pinId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: getToken() },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  deletePin: async (pinId: string) => {
+    const res = await fetch(`${API_URL}/pins/${pinId}`, {
+      method: "DELETE",
+      headers: { Authorization: getToken() },
+    });
+    return res.json();
+  },
 };

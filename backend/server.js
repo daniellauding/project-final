@@ -11,6 +11,7 @@ import Report from "./models/Report.js";
 import Notification from "./models/Notification.js";
 import Team from "./models/Team.js";
 import Project from "./models/Project.js";
+import PinComment from "./models/PinComment.js";
 import upload from "./middleware/upload.js";
 
 const port = process.env.PORT || 8080;
@@ -728,6 +729,116 @@ app.delete("/comments/:id", authenticateUser, async (req, res) => {
     res.json({ success: true, message: "Comment deleted" });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not delete comment", message: error.message });
+  }
+});
+
+// ── Pin Comments (Figma-style drop pins) ──
+
+// Optional auth: sets req.user if token present, continues regardless
+const optionalAuth = async (req, res, next) => {
+  const token = req.header("Authorization");
+  if (!token) return next();
+  try {
+    const user = await User.findOne({ accessToken: token });
+    if (user) req.user = user;
+  } catch {}
+  next();
+};
+
+// GET pin comments for a poll (optionally filtered by optionIndex)
+app.get("/polls/:id/pins", async (req, res) => {
+  try {
+    const filter = { poll: req.params.id };
+    if (req.query.optionIndex !== undefined) {
+      filter.optionIndex = Number(req.query.optionIndex);
+    }
+    const pins = await PinComment.find(filter).sort({ createdAt: 1 });
+    res.json(pins);
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not fetch pins", message: error.message });
+  }
+});
+
+// POST a pin comment (auth optional — anonymous gets a name)
+app.post("/polls/:id/pins", optionalAuth, async (req, res) => {
+  try {
+    const { text, xPercent, yPercent, optionIndex, username } = req.body;
+
+    const pin = new PinComment({
+      text,
+      xPercent,
+      yPercent,
+      optionIndex,
+      user: req.user?._id || null,
+      username: req.user?.username || username || "Ralph Wiggum",
+      poll: req.params.id
+    });
+
+    const saved = await pin.save();
+
+    // Notify poll creator
+    try {
+      const poll = await Poll.findById(req.params.id);
+      if (poll && req.user && poll.creator.toString() !== req.user._id.toString()) {
+        await new Notification({
+          user: poll.creator,
+          type: "comment",
+          poll: poll._id,
+          fromUser: req.user._id,
+          fromUsername: req.user.username,
+          message: `${req.user.username} pinned feedback on your poll`
+        }).save();
+      }
+    } catch (notifError) {
+      console.error("Notification error (pin):", notifError.message);
+    }
+
+    res.status(201).json(saved);
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not create pin", message: error.message });
+  }
+});
+
+// PATCH resolve/unresolve a pin
+app.patch("/pins/:id", authenticateUser, async (req, res) => {
+  try {
+    const pin = await PinComment.findById(req.params.id);
+    if (!pin) return res.status(404).json({ success: false, error: "Pin not found" });
+
+    // Only poll creator or pin author can update
+    const poll = await Poll.findById(pin.poll);
+    const isCreator = poll && poll.creator.toString() === req.user._id.toString();
+    const isAuthor = pin.user && pin.user.toString() === req.user._id.toString();
+    if (!isCreator && !isAuthor) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    if (req.body.resolved !== undefined) pin.resolved = req.body.resolved;
+    if (req.body.text !== undefined) pin.text = req.body.text;
+    const saved = await pin.save();
+    res.json(saved);
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not update pin", message: error.message });
+  }
+});
+
+// DELETE a pin
+app.delete("/pins/:id", authenticateUser, async (req, res) => {
+  try {
+    const pin = await PinComment.findById(req.params.id);
+    if (!pin) return res.status(404).json({ success: false, error: "Pin not found" });
+
+    const poll = await Poll.findById(pin.poll);
+    const isCreator = poll && poll.creator.toString() === req.user._id.toString();
+    const isAuthor = pin.user && pin.user.toString() === req.user._id.toString();
+    if (!isCreator && !isAuthor) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    await PinComment.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Pin deleted" });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not delete pin", message: error.message });
   }
 });
 
