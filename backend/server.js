@@ -232,9 +232,25 @@ app.get("/polls", async (req, res) => {
 
     const total = await Poll.countDocuments(filter);
 
+    // Enrich with vote + comment + pin counts
+    const pollIds = polls.map(p => p._id);
+    const [commentCounts, pinCounts] = await Promise.all([
+      Comment.aggregate([
+        { $match: { poll: { $in: pollIds } } },
+        { $group: { _id: "$poll", count: { $sum: 1 } } }
+      ]),
+      PinComment.aggregate([
+        { $match: { poll: { $in: pollIds } } },
+        { $group: { _id: "$poll", count: { $sum: 1 } } }
+      ])
+    ]);
+    const commentMap = Object.fromEntries(commentCounts.map(c => [c._id.toString(), c.count]));
+    const pinMap = Object.fromEntries(pinCounts.map(c => [c._id.toString(), c.count]));
+
     const enriched = polls.map((p) => {
       const obj = p.toObject();
       obj.totalVotes = obj.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
+      obj.commentCount = (commentMap[p._id.toString()] || 0) + (pinMap[p._id.toString()] || 0);
       return obj;
     });
 
@@ -759,10 +775,30 @@ app.get("/polls/:id/pins", async (req, res) => {
   }
 });
 
+// Helper: find @mentions and send notifications
+const processMentions = async (text, fromUser, fromUsername, pollId) => {
+  const mentions = text.match(/@(\w+)/g);
+  if (!mentions) return;
+  for (const mention of [...new Set(mentions)]) {
+    const username = mention.slice(1);
+    const mentionedUser = await User.findOne({ username });
+    if (mentionedUser && (!fromUser || mentionedUser._id.toString() !== fromUser.toString())) {
+      await new Notification({
+        user: mentionedUser._id,
+        type: "pin_mention",
+        poll: pollId,
+        fromUser: fromUser || undefined,
+        fromUsername: fromUsername,
+        message: `${fromUsername} mentioned you in a pin comment`
+      }).save();
+    }
+  }
+};
+
 // POST a pin comment (auth optional — anonymous gets a name)
 app.post("/polls/:id/pins", optionalAuth, async (req, res) => {
   try {
-    const { text, xPercent, yPercent, optionIndex, username } = req.body;
+    const { text, xPercent, yPercent, optionIndex, username, imageUrl, emoji } = req.body;
 
     const pin = new PinComment({
       text,
@@ -771,10 +807,13 @@ app.post("/polls/:id/pins", optionalAuth, async (req, res) => {
       optionIndex,
       user: req.user?._id || null,
       username: req.user?.username || username || "Ralph Wiggum",
-      poll: req.params.id
+      poll: req.params.id,
+      imageUrl: imageUrl || "",
+      emoji: emoji || ""
     });
 
     const saved = await pin.save();
+    const displayName = req.user?.username || username || "Ralph Wiggum";
 
     // Notify poll creator
     try {
@@ -782,20 +821,68 @@ app.post("/polls/:id/pins", optionalAuth, async (req, res) => {
       if (poll && req.user && poll.creator.toString() !== req.user._id.toString()) {
         await new Notification({
           user: poll.creator,
-          type: "comment",
+          type: "pin",
           poll: poll._id,
           fromUser: req.user._id,
-          fromUsername: req.user.username,
-          message: `${req.user.username} pinned feedback on your poll`
+          fromUsername: displayName,
+          message: `${displayName} pinned feedback on your poll`
         }).save();
       }
     } catch (notifError) {
       console.error("Notification error (pin):", notifError.message);
     }
 
+    // Process @mentions
+    try { await processMentions(text, req.user?._id, displayName, req.params.id); } catch {}
+
     res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not create pin", message: error.message });
+  }
+});
+
+// POST reply to a pin
+app.post("/pins/:id/replies", optionalAuth, async (req, res) => {
+  try {
+    const pin = await PinComment.findById(req.params.id);
+    if (!pin) return res.status(404).json({ success: false, error: "Pin not found" });
+
+    const { text, username, imageUrl, emoji } = req.body;
+    const displayName = req.user?.username || username || "Ralph Wiggum";
+
+    pin.replies.push({
+      text,
+      user: req.user?._id || null,
+      username: displayName,
+      imageUrl: imageUrl || "",
+      emoji: emoji || ""
+    });
+
+    const saved = await pin.save();
+
+    // Notify pin author about reply
+    try {
+      if (pin.user && (!req.user || pin.user.toString() !== req.user._id.toString())) {
+        const poll = await Poll.findById(pin.poll);
+        await new Notification({
+          user: pin.user,
+          type: "pin_reply",
+          poll: pin.poll,
+          fromUser: req.user?._id || undefined,
+          fromUsername: displayName,
+          message: `${displayName} replied to your pin`
+        }).save();
+      }
+    } catch (notifError) {
+      console.error("Notification error (pin reply):", notifError.message);
+    }
+
+    // Process @mentions in reply
+    try { await processMentions(text, req.user?._id, displayName, pin.poll); } catch {}
+
+    res.status(201).json(saved);
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not add reply", message: error.message });
   }
 });
 

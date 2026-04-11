@@ -1210,6 +1210,9 @@ const Home = ({ forceLanding = false }: { forceLanding?: boolean }) => {
                         <Badge variant="outline" className="text-[10px] bg-background/80 backdrop-blur-sm">{poll.visibility}</Badge>
                       )}
                       <Badge variant="secondary" className="text-xs">{poll.totalVotes || 0} votes</Badge>
+                      {(poll as any).commentCount > 0 && (
+                        <Badge variant="secondary" className="text-xs">{(poll as any).commentCount} 💬</Badge>
+                      )}
                     </div>
                   </div>
                   <div className="p-4">

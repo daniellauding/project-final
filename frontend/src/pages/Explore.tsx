@@ -91,8 +91,11 @@ const Explore = () => {
                       <Badge variant="secondary" className="text-[10px]">Remix</Badge>
                     )}
                   </div>
-                  <div className="absolute bottom-2 right-2">
+                  <div className="absolute bottom-2 right-2 flex gap-1">
                     <Badge variant="secondary" className="text-xs">{poll.totalVotes || 0} votes</Badge>
+                    {(poll as any).commentCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">{(poll as any).commentCount} 💬</Badge>
+                    )}
                   </div>
                 </div>
                 <div className="p-4">

@@ -193,8 +193,20 @@ update: async (pollId: string, data: { title?: string; description?: string; sta
     return res.json();
   },
 
-  addPin: async (pollId: string, data: { text: string; xPercent: number; yPercent: number; optionIndex: number; username?: string }) => {
+  addPin: async (pollId: string, data: { text: string; xPercent: number; yPercent: number; optionIndex: number; username?: string; imageUrl?: string; emoji?: string }) => {
     const res = await fetch(`${API_URL}/polls/${pollId}/pins`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: getToken(),
+      },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  addPinReply: async (pinId: string, data: { text: string; username?: string; imageUrl?: string; emoji?: string }) => {
+    const res = await fetch(`${API_URL}/pins/${pinId}/replies`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
