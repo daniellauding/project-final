@@ -1,0 +1,19 @@
+name: Keep Render alive
+
+on:
+  schedule:
+    # Every 14 minutes — Render free tier sleeps after 15 min inactivity
+    - cron: "*/14 * * * *"
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API
+        run: |
+          curl -sf "${{ secrets.RENDER_API_URL }}/beta-status" \
+            --max-time 30 \
+            -o /dev/null \
+            -w "HTTP %{http_code} in %{time_total}s\n" \
+          || echo "Server waking up..."
