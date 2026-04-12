@@ -281,6 +281,7 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
           const pin = pins.find(p => p._id === activePin);
           if (!pin) return null;
           const isAuthor = user && pin.user === user.userId;
+          const isAdmin = user?.role === "admin";
           return (
             <div
               data-popover
@@ -432,7 +433,7 @@ export default function PinDropLayer({ pollId, optionIndex, enabled, onToggle }:
                     <Check className="h-3 w-3" />
                     {pin.resolved ? "Done" : "Resolve"}
                   </button>
-                  {isAuthor && (
+                  {(isAuthor || isAdmin) && (
                     <button
                       onClick={() => handleDelete(pin._id)}
                       className="flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition"

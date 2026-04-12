@@ -7,6 +7,7 @@ interface User {
   username: string;
   avatarUrl?: string;
   accessToken: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -45,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: data.username,
         avatarUrl: data.avatarUrl || "",
         accessToken: data.accessToken,
+        role: data.role || "user",
       });
       identifyUser(data.userId, { username: data.username });
       trackEvent("user_logged_in");
@@ -61,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: data.username,
         avatarUrl: data.avatarUrl || "",
         accessToken: data.accessToken,
+        role: data.role || "user",
       });
       identifyUser(data.userId, { username: data.username });
       trackEvent("user_registered");

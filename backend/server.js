@@ -100,7 +100,8 @@ app.post("/users", async (req, res) => {
       userId: savedUser._id,
       username: savedUser.username,
       avatarUrl: savedUser.avatarUrl,
-      accessToken: savedUser.accessToken
+      accessToken: savedUser.accessToken,
+      role: savedUser.role
     });
   } catch (error) {
     res.status(400).json({
@@ -140,7 +141,8 @@ app.post("/sessions", async (req, res) => {
       userId: user._id,
       username: user.username,
       avatarUrl: user.avatarUrl,
-      accessToken: user.accessToken
+      accessToken: user.accessToken,
+      role: user.role
     });
   } catch (error) {
     res.status(500).json({
@@ -158,6 +160,7 @@ app.get("/users/me", authenticateUser, async (req, res) => {
     username: req.user.username,
     email: req.user.email,
     avatarUrl: req.user.avatarUrl,
+    role: req.user.role,
     createdAt: req.user.createdAt
   });
 });
@@ -737,7 +740,8 @@ app.delete("/comments/:id", authenticateUser, async (req, res) => {
       return res.status(404).json({ success: false, error: "Comment not found" });
     }
 
-    if (comment.user.toString() !== req.user._id.toString()) {
+    const isAdmin = req.user.role === "admin";
+    if (!isAdmin && comment.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
@@ -892,11 +896,11 @@ app.patch("/pins/:id", authenticateUser, async (req, res) => {
     const pin = await PinComment.findById(req.params.id);
     if (!pin) return res.status(404).json({ success: false, error: "Pin not found" });
 
-    // Only poll creator or pin author can update
+    const isAdmin = req.user.role === "admin";
     const poll = await Poll.findById(pin.poll);
     const isCreator = poll && poll.creator.toString() === req.user._id.toString();
     const isAuthor = pin.user && pin.user.toString() === req.user._id.toString();
-    if (!isCreator && !isAuthor) {
+    if (!isAdmin && !isCreator && !isAuthor) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
@@ -915,10 +919,11 @@ app.delete("/pins/:id", authenticateUser, async (req, res) => {
     const pin = await PinComment.findById(req.params.id);
     if (!pin) return res.status(404).json({ success: false, error: "Pin not found" });
 
+    const isAdmin = req.user.role === "admin";
     const poll = await Poll.findById(pin.poll);
     const isCreator = poll && poll.creator.toString() === req.user._id.toString();
     const isAuthor = pin.user && pin.user.toString() === req.user._id.toString();
-    if (!isCreator && !isAuthor) {
+    if (!isAdmin && !isCreator && !isAuthor) {
       return res.status(403).json({ success: false, error: "Not authorized" });
     }
 
@@ -986,6 +991,54 @@ app.patch("/admin/reports/:id", authenticateUser, async (req, res) => {
     res.json({ success: true, report });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not update report", message: error.message });
+  }
+});
+
+// Admin: Set user role
+app.patch("/admin/users/:id/role", authenticateUser, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Admin access required" });
+    }
+    const { role } = req.body;
+    if (!["user", "admin"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Invalid role" });
+    }
+    const updated = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+    if (!updated) return res.status(404).json({ success: false, error: "User not found" });
+    res.json({ success: true, userId: updated._id, username: updated.username, role: updated.role });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not update role", message: error.message });
+  }
+});
+
+// Admin: List all users (for role management)
+app.get("/admin/users", authenticateUser, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Admin access required" });
+    }
+    const users = await User.find({}, "username email role createdAt").sort({ createdAt: -1 });
+    res.json({ success: true, users });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Could not fetch users", message: error.message });
+  }
+});
+
+// Admin: Delete any poll
+app.delete("/admin/polls/:id", authenticateUser, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Admin access required" });
+    }
+    const poll = await Poll.findByIdAndDelete(req.params.id);
+    if (!poll) return res.status(404).json({ success: false, error: "Poll not found" });
+    // Cleanup related data
+    await Comment.deleteMany({ poll: req.params.id });
+    await PinComment.deleteMany({ poll: req.params.id });
+    res.json({ success: true, message: "Poll and related data deleted" });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not delete poll", message: error.message });
   }
 });
 

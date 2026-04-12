@@ -962,14 +962,16 @@ const VotePoll = () => {
                               }} />
                             )}
                           </div>
-                          {user && c.user === user.userId && editingComment !== c._id && (
+                          {user && (c.user === user.userId || user.role === "admin") && editingComment !== c._id && (
                             <div className="flex flex-col gap-0.5 shrink-0">
-                              <button
-                                onClick={() => { setEditingComment(c._id); setEditText(c.text); }}
-                                className="text-xs text-muted-foreground hover:text-foreground"
-                              >
-                                Edit
-                              </button>
+                              {c.user === user.userId && (
+                                <button
+                                  onClick={() => { setEditingComment(c._id); setEditText(c.text); }}
+                                  className="text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                  Edit
+                                </button>
+                              )}
                               <button
                                 onClick={async () => {
                                   await pollApi.deleteComment(c._id);
