@@ -17,6 +17,8 @@ import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Explore from "./pages/Explore";
 import Landing from "./pages/Landing";
+import Admin from "./pages/Admin";
+import Teams from "./pages/Teams";
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -47,6 +49,9 @@ const AppRoutes = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
           <Route path="/welcome" element={<Landing />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/teams/:teamId" element={<Teams />} />
         </Routes>
       </main>
       <Footer />

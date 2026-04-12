@@ -1,13 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info, Compass } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info, Compass, Users, Shield } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import AuthModal from "./AuthModal";
 import NotificationBell from "./NotificationBell";
 
-const BETA_DEADLINE = new Date("2026-03-31T23:59:59Z");
+const BETA_DEADLINE = new Date("2027-12-31T23:59:59Z");
 const betaOpen = new Date() <= BETA_DEADLINE;
 
 const LogoMark = () => (
@@ -88,6 +88,14 @@ const Header = () => {
                   {betaOpen && (
                     <Link to="/create" onClick={() => setMenuOpen(false)} className={itemClass}>
                       <PlusCircle className="h-4 w-4" /> New poll
+                    </Link>
+                  )}
+                  <Link to="/teams" onClick={() => setMenuOpen(false)} className={itemClass}>
+                    <Users className="h-4 w-4" /> Teams
+                  </Link>
+                  {user.role === "admin" && (
+                    <Link to="/admin" onClick={() => setMenuOpen(false)} className={itemClass}>
+                      <Shield className="h-4 w-4" /> Admin
                     </Link>
                   )}
                   <Link to="/profile" state={{ backgroundLocation: location }} onClick={() => setMenuOpen(false)} className={itemClass}>
