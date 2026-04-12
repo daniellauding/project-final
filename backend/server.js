@@ -1249,6 +1249,21 @@ app.post("/projects/:id/polls", authenticateUser, async (req, res) => {
   }
 });
 
+// Bootstrap: promote first user to admin (one-time use, remove after)
+app.post("/admin/bootstrap", async (req, res) => {
+  const { username, secret } = req.body;
+  if (secret !== "pejla-bootstrap-2026") {
+    return res.status(403).json({ error: "Invalid secret" });
+  }
+  const adminExists = await User.findOne({ role: "admin" });
+  if (adminExists) {
+    return res.status(400).json({ error: "Admin already exists", admin: adminExists.username });
+  }
+  const user = await User.findOneAndUpdate({ username }, { role: "admin" }, { new: true });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json({ success: true, username: user.username, role: user.role });
+});
+
 // Connect to MongoDB, then start server
 mongoose
   .connect(process.env.MONGO_URL)
