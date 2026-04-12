@@ -19,6 +19,7 @@ import Explore from "./pages/Explore";
 import Landing from "./pages/Landing";
 import Admin from "./pages/Admin";
 import Teams from "./pages/Teams";
+import Support from "./pages/Support";
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -52,6 +53,7 @@ const AppRoutes = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="/teams" element={<Teams />} />
           <Route path="/teams/:teamId" element={<Teams />} />
+          <Route path="/support" element={<Support />} />
         </Routes>
       </main>
       <Footer />

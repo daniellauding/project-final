@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
-import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info, Compass, Users, Shield } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogIn, User, Menu, X, Sun, Moon, Info, Compass, Users, Shield, Heart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -109,6 +109,9 @@ const Header = () => {
                 </button>
               )}
               <div className="border-t border-border/60 mt-1 pt-1">
+                <Link to="/support" onClick={() => setMenuOpen(false)} className={itemClass}>
+                  <Heart className="h-4 w-4" /> Support Pejla
+                </Link>
                 <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className={itemClass}>
                   {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   {theme === "dark" ? "Light mode" : "Dark mode"}

@@ -13,12 +13,16 @@ import Team from "./models/Team.js";
 import Project from "./models/Project.js";
 import PinComment from "./models/PinComment.js";
 import upload from "./middleware/upload.js";
+import Stripe from "stripe";
 
 const port = process.env.PORT || 8080;
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.path === "/stripe-webhook") return next();
+  express.json()(req, res, next);
+});
 
 // Auth middleware
 const authenticateUser = async (req, res, next) => {
@@ -1246,6 +1250,72 @@ app.post("/projects/:id/polls", authenticateUser, async (req, res) => {
     res.json({ success: true, project });
   } catch (error) {
     res.status(400).json({ success: false, error: "Could not add poll", message: error.message });
+  }
+});
+
+// ── Stripe Payments (Buy me a coffee) ──
+
+const stripeEnabled = !!process.env.STRIPE_SECRET_KEY;
+const stripe = stripeEnabled ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+
+app.post("/create-checkout", optionalAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ success: false, error: "Payments not configured" });
+  try {
+    const { amount, name, email, message } = req.body;
+    const cents = Math.max(100, Math.round(Number(amount) * 100));
+
+    const session = await stripe.checkout.sessions.create({
+      line_items: [{
+        price_data: {
+          currency: "usd",
+          product_data: { name: `Support Pejla ☕ ($${(cents/100).toFixed(2)})` },
+          unit_amount: cents,
+        },
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: `${req.headers.origin || "https://pejla.io"}/?coffee=success`,
+      cancel_url: `${req.headers.origin || "https://pejla.io"}/?coffee=cancelled`,
+      metadata: {
+        supporterName: name || "Anonymous",
+        supporterEmail: email || "",
+        supporterMessage: message || "",
+        userId: req.user?._id?.toString() || "",
+      },
+    });
+
+    res.json({ success: true, url: session.url });
+  } catch (error) {
+    res.status(400).json({ success: false, error: "Could not create checkout", message: error.message });
+  }
+});
+
+app.post("/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  if (!stripe) return res.sendStatus(503);
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.log("Stripe webhook received (no secret configured, accepting all):", req.body?.type);
+    return res.sendStatus(200);
+  }
+
+  try {
+    const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      console.log("Payment completed:", {
+        amount: session.amount_total,
+        name: session.metadata?.supporterName,
+        email: session.metadata?.supporterEmail,
+      });
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Webhook error:", error.message);
+    res.status(400).send(`Webhook Error: ${error.message}`);
   }
 });
 
